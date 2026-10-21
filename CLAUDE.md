@@ -55,7 +55,7 @@ _generated/         models produced by scripts/gen_types.py from openapi/openapi
 ## Template tokens
 
 This repo is a template. `ligaxai`, `ligaxai`, `LigaX`,
-`LIGA_X_*`, `LigaX AI`, `ligaxai`, `https://api.ligax.ai/api/public/v1` are
+`LIGAX_*`, `LigaX AI`, `ligaxai`, `https://enterprise.ligax.ai/api/public/v1` are
 placeholders replaced by `scripts/bootstrap.sh`. Never introduce a second spelling of any
 of them; see `docs/TEMPLATE-TOKENS.md`.
 

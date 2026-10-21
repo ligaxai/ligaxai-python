@@ -17,7 +17,7 @@ def test_redact_authorization_values() -> None:
 
 
 def test_setup_logging_levels(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LIGA_X_LOG", "debug")
+    monkeypatch.setenv("LIGAX_LOG", "debug")
     setup_logging()
     assert logger.level == logging.DEBUG
     setup_logging("warn")

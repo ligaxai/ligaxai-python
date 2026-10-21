@@ -2,7 +2,7 @@
 
 from ligaxai import LigaX
 
-client = LigaX()  # reads LIGA_X_API_KEY
+client = LigaX()  # reads LIGAX_API_KEY
 client.health.get()
 """
 

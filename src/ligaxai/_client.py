@@ -29,9 +29,9 @@ __all__ = [
     "LigaX",
 ]
 
-API_KEY_ENV_VAR = "LIGA_X_API_KEY"
-BASE_URL_ENV_VAR = "LIGA_X_BASE_URL"
-DEFAULT_BASE_URL = "https://api.ligax.ai/api/public/v1"
+API_KEY_ENV_VAR = "LIGAX_API_KEY"
+BASE_URL_ENV_VAR = "LIGAX_BASE_URL"
+DEFAULT_BASE_URL = "https://enterprise.ligax.ai/api/public/v1"
 
 T = TypeVar("T")
 
@@ -72,8 +72,8 @@ class LigaX(SyncBaseClient):
     """Synchronous client.
 
     Args:
-        api_key: Bearer token. Falls back to ``LIGA_X_API_KEY``.
-        base_url: API root. Falls back to ``LIGA_X_BASE_URL`` then the built-in default.
+        api_key: Bearer token. Falls back to ``LIGAX_API_KEY``.
+        base_url: API root. Falls back to ``LIGAX_BASE_URL`` then the built-in default.
         timeout: ``httpx2.Timeout`` or seconds. Default ``Timeout(600, connect=5)``.
         max_retries: Attempts after the first. Default 2.
         default_headers: Sent on every request (after the SDK's own headers).

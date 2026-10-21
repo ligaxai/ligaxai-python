@@ -44,9 +44,9 @@ See `Makefile` (`make help`). The gate is `make check && make test`.
 
 | Env var                 | Effect                                          |
 | ----------------------- | ----------------------------------------------- |
-| `LIGA_X_API_KEY`  | bearer token (required unless `api_key=`)       |
-| `LIGA_X_BASE_URL` | overrides `_client.DEFAULT_BASE_URL`            |
-| `LIGA_X_LOG`      | `debug\|info\|warn\|error\|off` package logging |
+| `LIGAX_API_KEY`  | bearer token (required unless `api_key=`)       |
+| `LIGAX_BASE_URL` | overrides `_client.DEFAULT_BASE_URL`            |
+| `LIGAX_LOG`      | `debug\|info\|warn\|error\|off` package logging |
 | `SPEC_VERSION` (file)   | pinned spec release tag; `unset` until published |
 
 ## CI / release

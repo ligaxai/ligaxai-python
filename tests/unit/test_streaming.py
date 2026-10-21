@@ -5,13 +5,13 @@ from collections.abc import AsyncIterator, Iterator
 import httpx2
 import pytest
 
-from base_project_module import (
+from ligaxai import (
     BaseModel,
     EventRegistry,
     InternalServerError,
     ServerSentEvent,
 )
-from base_project_module._streaming import SSEDecoder
+from ligaxai._streaming import SSEDecoder
 from tests.conftest import Recorder, json_response, make_async_client, make_sync_client
 
 

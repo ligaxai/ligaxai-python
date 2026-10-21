@@ -7,7 +7,7 @@ committed, so CI is hermetic.
 
 Environment overrides (all optional):
     SPEC_VERSION       release tag, default: contents of the SPEC_VERSION file
-    SPEC_REPO          "<org>/<repo>", default __GITHUB_ORG__/base-project-slug-spec-source
+    SPEC_REPO          "<org>/<repo>", default ligaxai/ligaxai-spec-source
     SPEC_ASSET_BASE    full URL prefix for the assets (bypasses GitHub entirely)
     GITHUB_TOKEN       sent as a bearer token for private repos / rate limits
 """
@@ -22,7 +22,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_REPO = "__GITHUB_ORG__/base-project-slug-spec-source"
+DEFAULT_REPO = "ligaxai/ligaxai-spec-source"
 ASSETS = ("openapi.json", "conformance.tar.gz")
 
 
@@ -42,7 +42,7 @@ def asset_url(version: str, name: str) -> str:
 
 
 def fetch(url: str) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "base-project-slug-sync-spec"})
+    req = urllib.request.Request(url, headers={"User-Agent": "ligaxai-sync-spec"})
     token = os.environ.get("GITHUB_TOKEN")
     if token:
         req.add_header("Authorization", f"Bearer {token}")

@@ -116,7 +116,7 @@ wheels = [
 ]
 
 [[package]]
-name = "base-project-slug"
+name = "ligaxai"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },

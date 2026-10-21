@@ -1,14 +1,14 @@
 # Summary — what this repo is and what works
 
-`base-project-slug` is a **template** for a hand-written, OpenAI/Anthropic-shaped Python SDK.
+`ligaxai` is a **template** for a hand-written, OpenAI/Anthropic-shaped Python SDK.
 It ships a complete, tested client skeleton with one example resource (`health`) and the
 tooling to turn an OpenAPI spec plus conformance fixtures into a real, publishable SDK.
 
 ## Package shape
 
 ```
-base_project_module
-├── BaseProject / AsyncBaseProject   _client.py     env config, with_options, context managers
+ligaxai
+├── LigaX / AsyncLigaX   _client.py     env config, with_options, context managers
 ├── resources.health                 resources/     Health.get() → HealthResponse (sync + async)
 ├── _base_client                     pipeline       auth, UA, idempotency, retries, error mapping
 ├── _streaming                       SSE            vendored parser, Stream/AsyncStream, EventRegistry

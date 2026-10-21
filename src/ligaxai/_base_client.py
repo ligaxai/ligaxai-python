@@ -1,4 +1,4 @@
-"""The shared request pipeline behind ``BaseProject`` and ``AsyncBaseProject``.
+"""The shared request pipeline behind ``LigaX`` and ``AsyncLigaX``.
 
 Layering: ``_client`` (public constructors, env, resource mounting) → ``resources/*``
 (one method per endpoint, sync + async) → this module (headers, retries, error mapping,
@@ -73,7 +73,7 @@ RETRYABLE_STATUS = frozenset({408, 409, 429})
 NEVER_RETRY_STATUS = frozenset({402, 403})
 IDEMPOTENT_METHODS = frozenset({"POST"})
 
-USER_AGENT_TEMPLATE = "base-project-slug-python/{version} (python/{py}; {os}/{arch})"
+USER_AGENT_TEMPLATE = "ligaxai-python/{version} (python/{py}; {os}/{arch})"
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 SyncPageT = TypeVar("SyncPageT", bound="SyncPage[Any]")

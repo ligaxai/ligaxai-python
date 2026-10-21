@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- Template skeleton: `BaseProject` / `AsyncBaseProject` clients with env-based
+- Template skeleton: `LigaX` / `AsyncLigaX` clients with env-based
   configuration, `with_options()`, context managers and `http_client` injection.
 - Request pipeline: bearer auth, `User-Agent`, `X-Request-Id` capture, auto
   `Idempotency-Key` on POST, retries with `retry-after-ms` / `retry-after` / exponential

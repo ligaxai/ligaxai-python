@@ -1,11 +1,11 @@
 [project]
-name = "base-project-slug-fastapi-example"
+name = "ligaxai-fastapi-example"
 version = "0.0.0"
 requires-python = ">=3.11"
 dependencies = [
-  "base-project-slug[fastapi]",
+  "ligaxai[fastapi]",
   "uvicorn>=0.30",
 ]
 
 [tool.uv.sources]
-base-project-slug = { path = "../..", editable = true }
+ligaxai = { path = "../..", editable = true }

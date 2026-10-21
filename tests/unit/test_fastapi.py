@@ -5,9 +5,9 @@ from collections.abc import AsyncIterator
 import httpx2
 from fastapi import Depends, FastAPI
 
-from base_project_module import AsyncBaseProject, ServerSentEvent
-from base_project_module.fastapi import client_dependency, encode_sse, stream_proxy
-from base_project_module.resources.health import HealthResponse
+from ligaxai import AsyncLigaX, ServerSentEvent
+from ligaxai.fastapi import client_dependency, encode_sse, stream_proxy
+from ligaxai.resources.health import HealthResponse
 
 
 def test_encode_sse_round_trips_fields() -> None:
@@ -22,7 +22,7 @@ async def test_dependency_and_stream_proxy() -> None:
     get_client = client_dependency(api_key="k", base_url="https://api.test.invalid")
 
     @app.get("/who")
-    async def who(client: AsyncBaseProject = Depends(get_client)) -> dict[str, str]:  # noqa: B008
+    async def who(client: AsyncLigaX = Depends(get_client)) -> dict[str, str]:  # noqa: B008
         return {"key": client.api_key}
 
     async def events() -> AsyncIterator[ServerSentEvent]:

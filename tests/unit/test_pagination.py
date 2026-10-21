@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from base_project_module import AsyncPage, RequestOptions, SyncPage
-from base_project_module._generated import ExampleModel
-from base_project_module._pagination import PageRequest
+from ligaxai import AsyncPage, RequestOptions, SyncPage
+from ligaxai._generated import ExampleModel
+from ligaxai._pagination import PageRequest
 from tests.conftest import Recorder, json_response, make_async_client, make_sync_client
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import httpx2
 import pytest
 
-from base_project_module import (
+from ligaxai import (
     APIStatusError,
     AuthenticationError,
     BadRequestError,

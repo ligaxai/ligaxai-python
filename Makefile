@@ -40,7 +40,7 @@ test-cov: ## All tests with the coverage gate (fail under 85%)
 build: ## Build sdist + wheel into dist/
 	uv build --no-sources
 
-gen-types: ## Regenerate src/base_project_module/_generated/models.py from openapi/openapi.json
+gen-types: ## Regenerate src/ligaxai/_generated/models.py from openapi/openapi.json
 	uv run python scripts/gen_types.py
 
 sync-spec: ## Download openapi.json + conformance fixtures for SPEC_VERSION

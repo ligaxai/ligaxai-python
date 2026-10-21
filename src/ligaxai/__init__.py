@@ -1,8 +1,8 @@
-"""__PROJECT_TITLE__ Python SDK.
+"""LigaX AI Python SDK.
 
-from base_project_module import BaseProject
+from ligaxai import LigaX
 
-client = BaseProject()  # reads BASE_PROJECT_API_KEY
+client = LigaX()  # reads LIGA_X_API_KEY
 client.health.get()
 """
 
@@ -10,8 +10,8 @@ from ._client import (
     API_KEY_ENV_VAR,
     BASE_URL_ENV_VAR,
     DEFAULT_BASE_URL,
-    AsyncBaseProject,
-    BaseProject,
+    AsyncLigaX,
+    LigaX,
     MissingAPIKeyError,
 )
 from ._exceptions import (
@@ -45,16 +45,16 @@ __all__ = [
     "APIError",
     "APIStatusError",
     "APITimeoutError",
-    "AsyncBaseProject",
+    "AsyncLigaX",
     "AsyncPage",
     "AsyncStream",
     "AuthenticationError",
     "BadRequestError",
     "BaseModel",
-    "BaseProject",
     "ConflictError",
     "EventRegistry",
     "InternalServerError",
+    "LigaX",
     "MissingAPIKeyError",
     "NotFoundError",
     "NotGiven",

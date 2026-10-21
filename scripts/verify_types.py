@@ -11,7 +11,7 @@ import json
 import subprocess
 import sys
 
-PACKAGE = "base_project_module"
+PACKAGE = "ligaxai"
 
 
 def main() -> int:

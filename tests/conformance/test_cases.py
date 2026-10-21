@@ -17,8 +17,8 @@ from typing import Any
 import httpx2
 import pytest
 
-from base_project_module import APIStatusError, AsyncBaseProject, BaseModel, BaseProject
-from base_project_module import _base_client as base_client_module
+from ligaxai import APIStatusError, AsyncLigaX, BaseModel, LigaX
+from ligaxai import _base_client as base_client_module
 from tests.conftest import TEST_API_KEY, TEST_BASE_URL
 
 CASES_DIR = Path(__file__).resolve().parents[2] / "conformance" / "cases"
@@ -88,7 +88,7 @@ def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_case_sync(path: Path) -> None:
     case = load(path)
     seen: list[httpx2.Request] = []
-    client = BaseProject(
+    client = LigaX(
         api_key=TEST_API_KEY,
         base_url=TEST_BASE_URL,
         max_retries=case.get("max_retries", 0),
@@ -108,7 +108,7 @@ def test_case_sync(path: Path) -> None:
 async def test_case_async(path: Path) -> None:
     case = load(path)
     seen: list[httpx2.Request] = []
-    client = AsyncBaseProject(
+    client = AsyncLigaX(
         api_key=TEST_API_KEY,
         base_url=TEST_BASE_URL,
         max_retries=case.get("max_retries", 0),

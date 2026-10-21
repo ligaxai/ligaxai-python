@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from standardwebhooks import Webhook
 
-from base_project_module import WebhookVerificationError, webhooks
+from ligaxai import WebhookVerificationError, webhooks
 
 SECRET = "whsec_" + base64.b64encode(b"0123456789abcdef0123456789abcdef").decode()
 PAYLOAD = json.dumps({"type": "run.completed", "data": {"id": "run_1"}}).encode()

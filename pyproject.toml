@@ -3,15 +3,15 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "base-project-slug"
-description = "__PROJECT_TITLE__ — official Python client library"
+name = "ligaxai"
+description = "LigaX AI — official Python client library"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dynamic = ["version"]
-authors = [{ name = "__PROJECT_TITLE__ authors" }]
-keywords = ["__PROJECT_TITLE__", "api", "sdk", "client"]
+authors = [{ name = "LigaX AI authors" }]
+keywords = ["LigaX AI", "api", "sdk", "client"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -36,9 +36,9 @@ dependencies = [
 fastapi = ["fastapi>=0.115"]
 
 [project.urls]
-Homepage = "https://github.com/__GITHUB_ORG__/base-project-slug"
-Repository = "https://github.com/__GITHUB_ORG__/base-project-slug"
-Changelog = "https://github.com/__GITHUB_ORG__/base-project-slug/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/ligaxai/ligaxai"
+Repository = "https://github.com/ligaxai/ligaxai"
+Changelog = "https://github.com/ligaxai/ligaxai/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
@@ -54,10 +54,10 @@ dev = [
 ]
 
 [tool.hatch.version]
-path = "src/base_project_module/_version.py"
+path = "src/ligaxai/_version.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/base_project_module"]
+packages = ["src/ligaxai"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src/", "tests/", "conformance/", "LICENSE", "README.md", "CHANGELOG.md"]
@@ -78,13 +78,13 @@ ignore = ["ANN401"]
 "tests/**" = ["ANN", "T20"]
 "scripts/**" = ["T20"]
 "examples/**" = ["T20", "ANN"]
-"src/base_project_module/_generated/**" = ["ALL"]
+"src/ligaxai/_generated/**" = ["ALL"]
 
 [tool.mypy]
 strict = true
 python_version = "3.11"
 mypy_path = "src"
-packages = ["base_project_module"]
+packages = ["ligaxai"]
 plugins = ["pydantic.mypy"]
 warn_unreachable = true
 exclude = ["examples/"]
@@ -106,9 +106,9 @@ asyncio_default_fixture_loop_scope = "function"
 filterwarnings = ["error"]
 
 [tool.coverage.run]
-source_pkgs = ["base_project_module"]
+source_pkgs = ["ligaxai"]
 branch = true
-omit = ["src/base_project_module/_generated/*"]
+omit = ["src/ligaxai/_generated/*"]
 
 [tool.coverage.report]
 fail_under = 85

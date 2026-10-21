@@ -1,7 +1,7 @@
 """Optional FastAPI helpers. Import only when ``fastapi`` is installed
-(``pip install base-project-slug[fastapi]``).
+(``pip install ligaxai[fastapi]``).
 
-* ``client_dependency()`` builds one ``AsyncBaseProject`` per process and hands it to
+* ``client_dependency()`` builds one ``AsyncLigaX`` per process and hands it to
   route functions through ``Depends``.
 * ``stream_proxy()`` re-encodes an SDK stream as ``text/event-stream`` so a backend can
   forward events to a browser without the browser ever holding the API key.
@@ -16,34 +16,32 @@ from typing import Any
 try:
     from fastapi.responses import StreamingResponse
 except ImportError:  # pragma: no cover - exercised only without the extra
-    raise ImportError(
-        "base_project_module.fastapi requires fastapi; install base-project-slug[fastapi]"
-    ) from None
+    raise ImportError("ligaxai.fastapi requires fastapi; install ligaxai[fastapi]") from None
 
-from ._client import AsyncBaseProject
+from ._client import AsyncLigaX
 from ._models import BaseModel
 from ._streaming import ServerSentEvent
 
 __all__ = ["client_dependency", "encode_sse", "stream_proxy"]
 
 
-def client_dependency(**client_kwargs: Any) -> Callable[[], AsyncBaseProject]:
-    """Return a FastAPI dependency that yields a shared ``AsyncBaseProject``.
+def client_dependency(**client_kwargs: Any) -> Callable[[], AsyncLigaX]:
+    """Return a FastAPI dependency that yields a shared ``AsyncLigaX``.
 
     Usage::
 
         get_client = client_dependency()
 
         @app.get("/health")
-        async def health(client: AsyncBaseProject = Depends(get_client)):
+        async def health(client: AsyncLigaX = Depends(get_client)):
             return await client.health.get()
     """
-    cached: AsyncBaseProject | None = None
+    cached: AsyncLigaX | None = None
 
-    def _dependency() -> AsyncBaseProject:
+    def _dependency() -> AsyncLigaX:
         nonlocal cached
         if cached is None:
-            cached = AsyncBaseProject(**client_kwargs)
+            cached = AsyncLigaX(**client_kwargs)
         return cached
 
     return _dependency

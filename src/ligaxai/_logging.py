@@ -1,7 +1,7 @@
-"""Package logger, configured from ``BASE_PROJECT_LOG``.
+"""Package logger, configured from ``LIGA_X_LOG``.
 
 Nothing is emitted unless the env var is set (or the host app configures the
-``base_project_module`` logger itself) — libraries must not install handlers on the
+``ligaxai`` logger itself) — libraries must not install handlers on the
 root logger. The redaction filter runs on every record so an ``Authorization`` header
 never reaches a log sink, even at ``debug``.
 """
@@ -14,9 +14,9 @@ import re
 
 __all__ = ["logger", "redact", "setup_logging"]
 
-LOG_ENV_VAR = "BASE_PROJECT_LOG"
+LOG_ENV_VAR = "LIGA_X_LOG"
 
-logger = logging.getLogger("base_project_module")
+logger = logging.getLogger("ligaxai")
 
 _LEVELS: dict[str, int] = {
     "debug": logging.DEBUG,

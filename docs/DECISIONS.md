@@ -35,7 +35,7 @@ misconfiguration.
 
 **Context.** Responses must carry the server's `X-Request-Id`; generated models must not be
 hand-edited. **Decision.** `_models.BaseModel` holds a private `_request_id` and
-`attach_request_id()`; `gen_types.py` passes `--base-class base_project_module._models.BaseModel`.
+`attach_request_id()`; `gen_types.py` passes `--base-class ligaxai._models.BaseModel`.
 `extra="allow"` keeps old clients working when the server adds fields.
 
 ## 2026-10-22 — Vendored SSE parser instead of `httpx-sse`

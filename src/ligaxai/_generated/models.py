@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from base_project_module._models import BaseModel
+from ligaxai._models import BaseModel
 
 
 class ExampleModel(BaseModel):

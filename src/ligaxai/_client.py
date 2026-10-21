@@ -1,4 +1,4 @@
-"""Public client classes: ``BaseProject`` (sync) and ``AsyncBaseProject``.
+"""Public client classes: ``LigaX`` (sync) and ``AsyncLigaX``.
 
 Both resolve configuration the same way — explicit argument, then environment, then
 default — and mount the same resources, so a user can switch between them by changing one
@@ -25,13 +25,13 @@ __all__ = [
     "API_KEY_ENV_VAR",
     "BASE_URL_ENV_VAR",
     "DEFAULT_BASE_URL",
-    "AsyncBaseProject",
-    "BaseProject",
+    "AsyncLigaX",
+    "LigaX",
 ]
 
-API_KEY_ENV_VAR = "BASE_PROJECT_API_KEY"
-BASE_URL_ENV_VAR = "BASE_PROJECT_BASE_URL"
-DEFAULT_BASE_URL = "__DEFAULT_BASE_URL__"
+API_KEY_ENV_VAR = "LIGA_X_API_KEY"
+BASE_URL_ENV_VAR = "LIGA_X_BASE_URL"
+DEFAULT_BASE_URL = "https://api.ligax.ai/api/public/v1"
 
 T = TypeVar("T")
 
@@ -68,12 +68,12 @@ def _resolve_base_url(base_url: str | None) -> str:
     return base_url or os.environ.get(BASE_URL_ENV_VAR) or DEFAULT_BASE_URL
 
 
-class BaseProject(SyncBaseClient):
+class LigaX(SyncBaseClient):
     """Synchronous client.
 
     Args:
-        api_key: Bearer token. Falls back to ``BASE_PROJECT_API_KEY``.
-        base_url: API root. Falls back to ``BASE_PROJECT_BASE_URL`` then the built-in default.
+        api_key: Bearer token. Falls back to ``LIGA_X_API_KEY``.
+        base_url: API root. Falls back to ``LIGA_X_BASE_URL`` then the built-in default.
         timeout: ``httpx2.Timeout`` or seconds. Default ``Timeout(600, connect=5)``.
         max_retries: Attempts after the first. Default 2.
         default_headers: Sent on every request (after the SDK's own headers).
@@ -141,8 +141,8 @@ class BaseProject(SyncBaseClient):
         self.close()
 
 
-class AsyncBaseProject(AsyncBaseClient):
-    """Asynchronous client. Same arguments as :class:`BaseProject`."""
+class AsyncLigaX(AsyncBaseClient):
+    """Asynchronous client. Same arguments as :class:`LigaX`."""
 
     health: AsyncHealth
 

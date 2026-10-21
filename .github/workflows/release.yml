@@ -1,8 +1,8 @@
 name: Release
 
-# Tag `vX.Y.Z` (matching src/base_project_module/_version.py) -> build -> publish to PyPI
+# Tag `vX.Y.Z` (matching src/ligaxai/_version.py) -> build -> publish to PyPI
 # via trusted publishing. Register the pending publisher on PyPI before the first release:
-# project `base-project-slug`, owner `__GITHUB_ORG__`, repo `base-project-slug`,
+# project `ligaxai`, owner `ligaxai`, repo `ligaxai`,
 # workflow `release.yml`, environment `pypi`.
 
 on:
@@ -22,7 +22,7 @@ jobs:
           python-version: "3.12"
       - name: Check tag matches package version
         run: |
-          pkg="$(uv run --no-project python -c "import re,pathlib;print(re.search(r'\"([^\"]+)\"', pathlib.Path('src/base_project_module/_version.py').read_text()).group(1))")"
+          pkg="$(uv run --no-project python -c "import re,pathlib;print(re.search(r'\"([^\"]+)\"', pathlib.Path('src/ligaxai/_version.py').read_text()).group(1))")"
           test "v$pkg" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v$pkg"; exit 1; }
       - run: uv sync --all-groups --locked
       - run: uv run ruff check src tests scripts examples && uv run mypy && uv run pyright
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/base-project-slug/
+      url: https://pypi.org/project/ligaxai/
     permissions:
       id-token: write # trusted publishing (OIDC) — no PyPI token stored anywhere
       contents: read

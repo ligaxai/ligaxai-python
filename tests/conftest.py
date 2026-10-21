@@ -10,8 +10,8 @@ from typing import Any
 import httpx2
 import pytest
 
-from base_project_module import AsyncBaseProject, BaseProject
-from base_project_module import _base_client as base_client_module
+from ligaxai import AsyncLigaX, LigaX
+from ligaxai import _base_client as base_client_module
 
 TEST_API_KEY = "test-key-not-a-secret"
 TEST_BASE_URL = "https://api.test.invalid/api/public/v1"
@@ -55,18 +55,18 @@ def error_body(
     return {"error": {"type": type_, "code": code, "message": message, "request_id": request_id}}
 
 
-def make_sync_client(recorder: Recorder, **kwargs: Any) -> BaseProject:
+def make_sync_client(recorder: Recorder, **kwargs: Any) -> LigaX:
     kwargs.setdefault("api_key", TEST_API_KEY)
     kwargs.setdefault("base_url", TEST_BASE_URL)
-    return BaseProject(
+    return LigaX(
         http_client=httpx2.Client(transport=httpx2.MockTransport(recorder.handler)), **kwargs
     )
 
 
-def make_async_client(recorder: Recorder, **kwargs: Any) -> AsyncBaseProject:
+def make_async_client(recorder: Recorder, **kwargs: Any) -> AsyncLigaX:
     kwargs.setdefault("api_key", TEST_API_KEY)
     kwargs.setdefault("base_url", TEST_BASE_URL)
-    return AsyncBaseProject(
+    return AsyncLigaX(
         http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(recorder.handler)),
         **kwargs,
     )
@@ -95,5 +95,5 @@ def no_sleep(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[float]]:
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("BASE_PROJECT_API_KEY", raising=False)
-    monkeypatch.delenv("BASE_PROJECT_BASE_URL", raising=False)
+    monkeypatch.delenv("LIGA_X_API_KEY", raising=False)
+    monkeypatch.delenv("LIGA_X_BASE_URL", raising=False)

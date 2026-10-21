@@ -1,17 +1,17 @@
-# __PROJECT_TITLE__ Python SDK
+# LigaX AI Python SDK
 
-[![CI](https://github.com/__GITHUB_ORG__/base-project-slug/actions/workflows/ci.yml/badge.svg)](https://github.com/__GITHUB_ORG__/base-project-slug/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/base-project-slug.svg)](https://pypi.org/project/base-project-slug/)
-[![Python](https://img.shields.io/pypi/pyversions/base-project-slug.svg)](https://pypi.org/project/base-project-slug/)
+[![CI](https://github.com/ligaxai/ligaxai/actions/workflows/ci.yml/badge.svg)](https://github.com/ligaxai/ligaxai/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/ligaxai.svg)](https://pypi.org/project/ligaxai/)
+[![Python](https://img.shields.io/pypi/pyversions/ligaxai.svg)](https://pypi.org/project/ligaxai/)
 
-The official Python client for the __PROJECT_TITLE__ API. Sync and async clients with the
+The official Python client for the LigaX AI API. Sync and async clients with the
 same surface, typed responses, automatic retries, streaming and webhook verification.
 
 ## Install
 
 ```bash
-pip install base-project-slug            # or: uv add base-project-slug
-pip install "base-project-slug[fastapi]" # adds the FastAPI helpers
+pip install ligaxai            # or: uv add ligaxai
+pip install "ligaxai[fastapi]" # adds the FastAPI helpers
 ```
 
 Requires Python 3.11 or newer.
@@ -21,15 +21,15 @@ Requires Python 3.11 or newer.
 Set your key once:
 
 ```bash
-export BASE_PROJECT_API_KEY="..."
+export LIGA_X_API_KEY="..."
 ```
 
 Sync:
 
 ```python
-from base_project_module import BaseProject
+from ligaxai import LigaX
 
-client = BaseProject()            # reads BASE_PROJECT_API_KEY
+client = LigaX()            # reads LIGA_X_API_KEY
 health = client.health.get()
 print(health.status, health.request_id)
 ```
@@ -37,21 +37,21 @@ print(health.status, health.request_id)
 Async:
 
 ```python
-from base_project_module import AsyncBaseProject
+from ligaxai import AsyncLigaX
 
-async with AsyncBaseProject() as client:
+async with AsyncLigaX() as client:
     health = await client.health.get()
 ```
 
 Streaming (server-sent events):
 
 ```python
-from base_project_module import BaseModel, BaseProject, EventRegistry
+from ligaxai import BaseModel, LigaX, EventRegistry
 
 class Delta(BaseModel):
     text: str
 
-with BaseProject() as client:
+with LigaX() as client:
     stream = client.request_stream("POST", "/runs", json={"input": "hi"},
                                    registry=EventRegistry({"delta": Delta}))
     for event in stream:
@@ -64,12 +64,12 @@ with BaseProject() as client:
 
 | Setting     | Argument           | Environment variable    | Default                       |
 | ----------- | ------------------ | ----------------------- | ----------------------------- |
-| API key     | `api_key=`         | `BASE_PROJECT_API_KEY`  | — (required)                  |
-| Base URL    | `base_url=`        | `BASE_PROJECT_BASE_URL` | `__DEFAULT_BASE_URL__`        |
+| API key     | `api_key=`         | `LIGA_X_API_KEY`  | — (required)                  |
+| Base URL    | `base_url=`        | `LIGA_X_BASE_URL` | `https://api.ligax.ai/api/public/v1`        |
 | Timeout     | `timeout=`         |                         | `Timeout(600, connect=5)`     |
 | Retries     | `max_retries=`     |                         | `2`                           |
 | Headers     | `default_headers=` |                         | `{}`                          |
-| Logging     |                    | `BASE_PROJECT_LOG`      | `off`                         |
+| Logging     |                    | `LIGA_X_LOG`      | `off`                         |
 | HTTP client | `http_client=`     |                         | an `httpx2.Client` of our own |
 
 `client.with_options(max_retries=0, timeout=10)` returns a copy that shares the connection
@@ -90,7 +90,7 @@ is safe. Pass your own via `RequestOptions(idempotency_key=…)`.
 ## Errors
 
 ```python
-from base_project_module import APIConnectionError, APIStatusError, RateLimitError
+from ligaxai import APIConnectionError, APIStatusError, RateLimitError
 
 try:
     client.health.get()
@@ -120,13 +120,13 @@ to the `X-Request-Id` header. Successful responses expose it too: `result.reques
 
 ## Logging
 
-`BASE_PROJECT_LOG=debug|info|warn|error|off` configures the `base_project_module`
+`LIGA_X_LOG=debug|info|warn|error|off` configures the `ligaxai`
 logger. `Authorization` values are redacted before they reach any handler.
 
 ## Webhooks
 
 ```python
-from base_project_module import WebhookVerificationError, webhooks
+from ligaxai import WebhookVerificationError, webhooks
 
 try:
     event = webhooks.verify(request.body, request.headers, secret=WEBHOOK_SECRET)
@@ -141,14 +141,14 @@ Follows the [Standard Webhooks](https://www.standardwebhooks.com) spec
 
 ```python
 from fastapi import Depends, FastAPI
-from base_project_module import AsyncBaseProject
-from base_project_module.fastapi import client_dependency, stream_proxy
+from ligaxai import AsyncLigaX
+from ligaxai.fastapi import client_dependency, stream_proxy
 
 app = FastAPI()
 get_client = client_dependency()
 
 @app.get("/chat")
-async def chat(client: AsyncBaseProject = Depends(get_client)):
+async def chat(client: AsyncLigaX = Depends(get_client)):
     return stream_proxy(await client.request_stream("POST", "/runs", json={}))
 ```
 
@@ -178,7 +178,7 @@ make test-cov   # coverage gate (85 %)
 make build      # sdist + wheel
 ```
 
-Releases: bump `src/base_project_module/_version.py`, update `CHANGELOG.md`, tag `vX.Y.Z`.
+Releases: bump `src/ligaxai/_version.py`, update `CHANGELOG.md`, tag `vX.Y.Z`.
 `release.yml` builds and publishes through PyPI trusted publishing.
 
 ## How to use this template
@@ -191,7 +191,7 @@ real SDK from it:
 # e.g. ./scripts/bootstrap.sh acme acme Acme "Acme" acme-inc https://api.acme.com/api/public/v1
 ```
 
-It rewrites every token in tracked files, renames `src/base_project_module`, re-locks and
+It rewrites every token in tracked files, renames `src/ligaxai`, re-locks and
 prints a summary. Then set `SPEC_VERSION`, run `make sync-spec && make gen-types`, add
 resources next to `resources/health.py`, and delete this section. The full token list is in
 [`docs/TEMPLATE-TOKENS.md`](docs/TEMPLATE-TOKENS.md).

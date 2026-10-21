@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from base_project_module._logging import logger, redact, setup_logging
+from ligaxai._logging import logger, redact, setup_logging
 
 
 def test_redact_authorization_values() -> None:
@@ -17,7 +17,7 @@ def test_redact_authorization_values() -> None:
 
 
 def test_setup_logging_levels(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("BASE_PROJECT_LOG", "debug")
+    monkeypatch.setenv("LIGA_X_LOG", "debug")
     setup_logging()
     assert logger.level == logging.DEBUG
     setup_logging("warn")
@@ -30,7 +30,7 @@ def test_setup_logging_levels(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_records_are_redacted(caplog: pytest.LogCaptureFixture) -> None:
     setup_logging("debug")
-    with caplog.at_level(logging.DEBUG, logger="base_project_module"):
+    with caplog.at_level(logging.DEBUG, logger="ligaxai"):
         logger.debug("headers=%s", "Authorization: Bearer secret-token")
     assert "secret-token" not in caplog.text
     assert "[redacted]" in caplog.text

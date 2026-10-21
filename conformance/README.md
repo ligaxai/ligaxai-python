@@ -1,7 +1,7 @@
 # Conformance cases
 
 `cases/*.json` are HTTP exchanges every official SDK must handle identically. They are
-authored in the spec repo (`__GITHUB_ORG__/base-project-slug-spec-source`) and copied here
+authored in the spec repo (`ligaxai/ligaxai-spec-source`) and copied here
 by `make sync-spec` for the tag in `SPEC_VERSION`. The two files checked in are local
 examples so the harness has something to run before a spec is published.
 

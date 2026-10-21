@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-`base-project-slug` — the __PROJECT_TITLE__ Python SDK (import `base_project_module`).
+`ligaxai` — the LigaX AI Python SDK (import `ligaxai`).
 Python ≥ 3.11, uv-managed, hatchling build, published to PyPI by tag. Setup and usage live in
 README.md; this file holds the invariants.
 
@@ -36,7 +36,7 @@ _generated/         models produced by scripts/gen_types.py from openapi/openapi
 1. **Every public method exists in sync and async form** with the same name, parameters
    and return type. Add both in the same commit; the conformance harness runs each case
    against both clients.
-2. **Generated models are never hand-edited.** `src/base_project_module/_generated/` is
+2. **Generated models are never hand-edited.** `src/ligaxai/_generated/` is
    written by `make gen-types`; fix the spec or the generator flags instead. Hand-written
    models inherit from `_models.BaseModel` so `request_id` works everywhere.
 3. **Tests never hit the network.** Inject `httpx2.MockTransport` through `http_client=`;
@@ -54,8 +54,8 @@ _generated/         models produced by scripts/gen_types.py from openapi/openapi
 
 ## Template tokens
 
-This repo is a template. `base-project-slug`, `base_project_module`, `BaseProject`,
-`BASE_PROJECT_*`, `__PROJECT_TITLE__`, `__GITHUB_ORG__`, `__DEFAULT_BASE_URL__` are
+This repo is a template. `ligaxai`, `ligaxai`, `LigaX`,
+`LIGA_X_*`, `LigaX AI`, `ligaxai`, `https://api.ligax.ai/api/public/v1` are
 placeholders replaced by `scripts/bootstrap.sh`. Never introduce a second spelling of any
 of them; see `docs/TEMPLATE-TOKENS.md`.
 

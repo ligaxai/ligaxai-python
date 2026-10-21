@@ -1,0 +1,116 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "base-project-slug"
+description = "__PROJECT_TITLE__ — official Python client library"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dynamic = ["version"]
+authors = [{ name = "__PROJECT_TITLE__ authors" }]
+keywords = ["__PROJECT_TITLE__", "api", "sdk", "client"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
+dependencies = [
+  "httpx2",
+  "pydantic>=2",
+  "anyio>=4",
+  "typing-extensions>=4.10",
+  "standardwebhooks>=1.0",
+]
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.115"]
+
+[project.urls]
+Homepage = "https://github.com/__GITHUB_ORG__/base-project-slug"
+Repository = "https://github.com/__GITHUB_ORG__/base-project-slug"
+Changelog = "https://github.com/__GITHUB_ORG__/base-project-slug/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=5",
+  "fastapi>=0.115",
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "pyright>=1.1.390",
+  "pre-commit>=4",
+  "datamodel-code-generator>=0.26",
+]
+
+[tool.hatch.version]
+path = "src/base_project_module/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/base_project_module"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/", "tests/", "conformance/", "LICENSE", "README.md", "CHANGELOG.md"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "W", "RUF", "SIM", "ANN", "PTH", "T20"]
+ignore = ["ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "T20"]
+"scripts/**" = ["T20"]
+"examples/**" = ["T20", "ANN"]
+"src/base_project_module/_generated/**" = ["ALL"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+mypy_path = "src"
+packages = ["base_project_module"]
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+exclude = ["examples/"]
+
+[[tool.mypy.overrides]]
+module = ["standardwebhooks.*"]
+ignore_missing_imports = true
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+reportMissingModuleSource = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source_pkgs = ["base_project_module"]
+branch = true
+omit = ["src/base_project_module/_generated/*"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+exclude_also = ["if TYPE_CHECKING:", "@overload", "raise NotImplementedError"]

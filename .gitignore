@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[codz]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+wheels/
+
+# Environments
+.venv/
+venv/
+.python-version.local
+
+# Secrets — examples read their key from the environment; never commit one
+.env
+.env.*
+!.env.example
+examples/**/.env
+examples/**/.env.*
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Synced spec (committed on purpose once SPEC_VERSION is set; nothing to ignore here)
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

@@ -14,7 +14,7 @@ from ligaxai import AsyncLigaX
 from ligaxai.fastapi import client_dependency, stream_proxy
 
 app = FastAPI(title="LigaX AI example")
-get_client = client_dependency()  # reads LIGA_X_API_KEY / LIGA_X_BASE_URL
+get_client = client_dependency()  # reads LIGAX_API_KEY / LIGAX_BASE_URL
 
 
 @app.get("/token-example")

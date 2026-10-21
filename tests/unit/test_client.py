@@ -16,15 +16,15 @@ from tests.conftest import TEST_API_KEY, TEST_BASE_URL, Recorder, json_response,
 
 
 def test_api_key_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LIGA_X_API_KEY", "env-key")
-    monkeypatch.setenv("LIGA_X_BASE_URL", "https://env.test.invalid/v1")
+    monkeypatch.setenv("LIGAX_API_KEY", "env-key")
+    monkeypatch.setenv("LIGAX_BASE_URL", "https://env.test.invalid/v1")
     with LigaX() as client:
         assert client.api_key == "env-key"
         assert str(client.base_url) == "https://env.test.invalid/v1/"
 
 
 def test_explicit_api_key_beats_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LIGA_X_API_KEY", "env-key")
+    monkeypatch.setenv("LIGAX_API_KEY", "env-key")
     with LigaX(api_key="arg-key") as client:
         assert client.api_key == "arg-key"
 
@@ -34,11 +34,11 @@ def test_missing_api_key_raises_value_error() -> None:
         LigaX()
     assert isinstance(exc_info.value, ValueError)
     assert isinstance(exc_info.value, APIError)
-    assert "LIGA_X_API_KEY" in str(exc_info.value)
+    assert "LIGAX_API_KEY" in str(exc_info.value)
 
 
 def test_empty_env_key_is_treated_as_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LIGA_X_API_KEY", "")
+    monkeypatch.setenv("LIGAX_API_KEY", "")
     with pytest.raises(MissingAPIKeyError):
         AsyncLigaX()
 

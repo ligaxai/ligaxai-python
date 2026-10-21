@@ -31,7 +31,7 @@ SLUG="$1" MODULE="$2" PREFIX="$3" TITLE="$4" ORG="$5" BASE_URL="$6"
 [[ "$BASE_URL" =~ ^https?:// ]] || { echo "base-url must start with http(s)://" >&2; exit 1; }
 
 # PascalCase -> UPPER_SNAKE for the env-var prefix: AcmeCloud -> ACME_CLOUD.
-ENV_PREFIX="$(printf '%s' "$PREFIX" | sed -E 's/([a-z0-9])([A-Z])/\1_\2/g' | tr '[:lower:]' '[:upper:]')"
+ENV_PREFIX="${7:-$(printf '%s' "$PREFIX" | tr '[:lower:]' '[:upper:]')}"
 
 cd "$(git rev-parse --show-toplevel)"
 

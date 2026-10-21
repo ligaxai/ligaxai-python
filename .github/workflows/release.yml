@@ -1,12 +1,22 @@
 name: Release
 
-# Tag `vX.Y.Z` (matching src/ligaxai/_version.py) -> build -> publish to PyPI
-# via trusted publishing. Register the pending publisher on PyPI before the first release:
-# project `ligaxai`, owner `ligaxai`, repo `ligaxai`,
-# workflow `release.yml`, environment `pypi`.
+# Two channels, one package name, one index:
+#
+#   dev  — every push to `dev` publishes a PEP 440 pre-release `X.Y.Z.dev<run>` (X.Y.Z from
+#          src/ligaxai/_version.py). `pip install ligaxai` never picks these up; only an explicit
+#          pin (`ligaxai==0.1.0.dev42`) or `pip install --pre ligaxai` does. Environment `pypi-dev`.
+#   main — a tag `vX.Y.Z` (matching _version.py) publishes the stable release. Environment `pypi`.
+#
+# PyPI trusted publishing needs one publisher entry per (workflow, environment): register both
+# (project `ligaxai`, owner `ligaxai`, repo `ligaxai-python`, workflow `release.yml`,
+# environments `pypi` and `pypi-dev`). No token is stored anywhere; OIDC is the credential.
+#
+# After a stable tag, bump _version.py on `dev` (e.g. 0.1.0 -> 0.1.1) so the next dev build sorts
+# above the release: PEP 440 orders 0.1.0.dev1 < 0.1.0 < 0.1.1.dev1.
 
 on:
   push:
+    branches: [dev]
     tags: ["v*"]
 
 permissions:
@@ -15,15 +25,29 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      channel: ${{ steps.meta.outputs.channel }}
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
-      - name: Check tag matches package version
+      - name: Resolve channel and version
+        id: meta
         run: |
-          pkg="$(uv run --no-project python -c "import re,pathlib;print(re.search(r'\"([^\"]+)\"', pathlib.Path('src/ligaxai/_version.py').read_text()).group(1))")"
-          test "v$pkg" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v$pkg"; exit 1; }
+          base="$(uv run --no-project python -c "import re,pathlib;print(re.search(r'\"([^\"]+)\"', pathlib.Path('src/ligaxai/_version.py').read_text()).group(1))")"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            test "v$base" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v$base"; exit 1; }
+            echo "channel=stable" >> "$GITHUB_OUTPUT"
+            echo "version=$base" >> "$GITHUB_OUTPUT"
+          else
+            v="${base}.dev${GITHUB_RUN_NUMBER}"
+            # The pre-release version is stamped into the build only; nothing is committed.
+            printf '__version__ = "%s"\n' "$v" > src/ligaxai/_version.py
+            echo "channel=dev" >> "$GITHUB_OUTPUT"
+            echo "version=$v" >> "$GITHUB_OUTPUT"
+          fi
       - run: uv sync --all-groups --locked
       - run: uv run ruff check src tests scripts examples && uv run mypy && uv run pyright
       - run: uv run pytest
@@ -38,8 +62,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: pypi
-      url: https://pypi.org/project/ligaxai/
+      name: ${{ needs.build.outputs.channel == 'stable' && 'pypi' || 'pypi-dev' }}
+      url: https://pypi.org/project/ligaxai/${{ needs.build.outputs.version }}/
     permissions:
       id-token: write # trusted publishing (OIDC) — no PyPI token stored anywhere
       contents: read

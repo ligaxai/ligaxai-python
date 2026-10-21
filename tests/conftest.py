@@ -95,5 +95,5 @@ def no_sleep(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[float]]:
 
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("LIGA_X_API_KEY", raising=False)
-    monkeypatch.delenv("LIGA_X_BASE_URL", raising=False)
+    monkeypatch.delenv("LIGAX_API_KEY", raising=False)
+    monkeypatch.delenv("LIGAX_BASE_URL", raising=False)

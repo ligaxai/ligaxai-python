@@ -21,7 +21,7 @@ Requires Python 3.11 or newer.
 Set your key once:
 
 ```bash
-export LIGA_X_API_KEY="..."
+export LIGAX_API_KEY="..."
 ```
 
 Sync:
@@ -29,7 +29,7 @@ Sync:
 ```python
 from ligaxai import LigaX
 
-client = LigaX()            # reads LIGA_X_API_KEY
+client = LigaX()            # reads LIGAX_API_KEY
 health = client.health.get()
 print(health.status, health.request_id)
 ```
@@ -64,12 +64,12 @@ with LigaX() as client:
 
 | Setting     | Argument           | Environment variable    | Default                       |
 | ----------- | ------------------ | ----------------------- | ----------------------------- |
-| API key     | `api_key=`         | `LIGA_X_API_KEY`  | — (required)                  |
-| Base URL    | `base_url=`        | `LIGA_X_BASE_URL` | `https://api.ligax.ai/api/public/v1`        |
+| API key     | `api_key=`         | `LIGAX_API_KEY`  | — (required)                  |
+| Base URL    | `base_url=`        | `LIGAX_BASE_URL` | `https://enterprise.ligax.ai/api/public/v1`        |
 | Timeout     | `timeout=`         |                         | `Timeout(600, connect=5)`     |
 | Retries     | `max_retries=`     |                         | `2`                           |
 | Headers     | `default_headers=` |                         | `{}`                          |
-| Logging     |                    | `LIGA_X_LOG`      | `off`                         |
+| Logging     |                    | `LIGAX_LOG`      | `off`                         |
 | HTTP client | `http_client=`     |                         | an `httpx2.Client` of our own |
 
 `client.with_options(max_retries=0, timeout=10)` returns a copy that shares the connection
@@ -120,7 +120,7 @@ to the `X-Request-Id` header. Successful responses expose it too: `result.reques
 
 ## Logging
 
-`LIGA_X_LOG=debug|info|warn|error|off` configures the `ligaxai`
+`LIGAX_LOG=debug|info|warn|error|off` configures the `ligaxai`
 logger. `Authorization` values are redacted before they reach any handler.
 
 ## Webhooks
@@ -199,3 +199,15 @@ resources next to `resources/health.py`, and delete this section. The full token
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE).
+
+## Release channels
+
+| Channel | Source | Version shape | Install |
+| --- | --- | --- | --- |
+| dev | every push to `dev` | `0.1.0.dev42` (PEP 440 pre-release) | `pip install "ligaxai==0.1.0.dev42"` or `pip install --pre ligaxai` |
+| stable | tag `vX.Y.Z` on `main` | `0.1.0` | `pip install ligaxai` |
+
+`pip install ligaxai` never selects a `.dev` build. Point a dev install at the development
+platform with `LIGAX_BASE_URL=https://<dev-host>/api/public/v1`; the built-in default is the
+production host. After a stable tag, bump `src/ligaxai/_version.py` on `dev` so the next dev build
+sorts above the release.

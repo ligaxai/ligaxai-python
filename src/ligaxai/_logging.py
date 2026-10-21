@@ -1,4 +1,4 @@
-"""Package logger, configured from ``LIGA_X_LOG``.
+"""Package logger, configured from ``LIGAX_LOG``.
 
 Nothing is emitted unless the env var is set (or the host app configures the
 ``ligaxai`` logger itself) — libraries must not install handlers on the
@@ -14,7 +14,7 @@ import re
 
 __all__ = ["logger", "redact", "setup_logging"]
 
-LOG_ENV_VAR = "LIGA_X_LOG"
+LOG_ENV_VAR = "LIGAX_LOG"
 
 logger = logging.getLogger("ligaxai")
 

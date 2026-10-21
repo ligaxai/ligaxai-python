@@ -1,0 +1,55 @@
+name: Release
+
+# Tag `vX.Y.Z` (matching src/base_project_module/_version.py) -> build -> publish to PyPI
+# via trusted publishing. Register the pending publisher on PyPI before the first release:
+# project `base-project-slug`, owner `__GITHUB_ORG__`, repo `base-project-slug`,
+# workflow `release.yml`, environment `pypi`.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Check tag matches package version
+        run: |
+          pkg="$(uv run --no-project python -c "import re,pathlib;print(re.search(r'\"([^\"]+)\"', pathlib.Path('src/base_project_module/_version.py').read_text()).group(1))")"
+          test "v$pkg" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v$pkg"; exit 1; }
+      - run: uv sync --all-groups --locked
+      - run: uv run ruff check src tests scripts examples && uv run mypy && uv run pyright
+      - run: uv run pytest
+      - run: uv build --no-sources
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/base-project-slug/
+    permissions:
+      id-token: write # trusted publishing (OIDC) — no PyPI token stored anywhere
+      contents: read
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
+          print-hash: true

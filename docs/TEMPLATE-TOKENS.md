@@ -30,4 +30,4 @@ The spec repo name is derived: `__GITHUB_ORG__/base-project-slug-spec-source` (o
 - `BASE_PROJECT` is replaced **before** `BaseProject` on purpose: the env-var prefix must not
   be rewritten by the class-prefix rule.
 - After bootstrapping: delete the "How to use this template" section of README.md and this
-  file, set `SPEC_VERSION`, and replace `security@example.com` in SECURITY.md.
+  file, set `SPEC_VERSION`, and replace `security@ligaments.ai` in SECURITY.md.

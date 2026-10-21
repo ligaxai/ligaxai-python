@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email **security@example.com** (replace with the project's contact when bootstrapping) with a
+Email **security@ligaments.ai** (replace with the project's contact when bootstrapping) with a
 description and reproduction steps. Do not open a public issue for security reports. We aim
 to acknowledge within 2 business days.
 

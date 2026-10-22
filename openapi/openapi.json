@@ -220,7 +220,7 @@
                       ]
                     },
                     "version": {
-                      "type": "number"
+                      "type": "integer"
                     }
                   },
                   "required": [
@@ -238,7 +238,7 @@
                   "type": "object",
                   "properties": {
                     "index": {
-                      "type": "number"
+                      "type": "integer"
                     },
                     "url": {
                       "type": "string"
@@ -362,7 +362,7 @@
                   "input_tokens": {
                     "anyOf": [
                       {
-                        "type": "number"
+                        "type": "integer"
                       },
                       {
                         "type": "null"
@@ -372,7 +372,7 @@
                   "output_tokens": {
                     "anyOf": [
                       {
-                        "type": "number"
+                        "type": "integer"
                       },
                       {
                         "type": "null"
@@ -457,7 +457,7 @@
         "type": "object",
         "properties": {
           "seq": {
-            "type": "number"
+            "type": "integer"
           },
           "type": {
             "type": "string"
@@ -703,7 +703,7 @@
                                 ]
                               },
                               "version": {
-                                "type": "number"
+                                "type": "integer"
                               }
                             },
                             "required": [
@@ -721,7 +721,7 @@
                             "type": "object",
                             "properties": {
                               "index": {
-                                "type": "number"
+                                "type": "integer"
                               },
                               "url": {
                                 "type": "string"
@@ -845,7 +845,7 @@
                             "input_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -855,7 +855,7 @@
                             "output_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -1050,7 +1050,7 @@
                                 ]
                               },
                               "version": {
-                                "type": "number"
+                                "type": "integer"
                               }
                             },
                             "required": [
@@ -1068,7 +1068,7 @@
                             "type": "object",
                             "properties": {
                               "index": {
-                                "type": "number"
+                                "type": "integer"
                               },
                               "url": {
                                 "type": "string"
@@ -1192,7 +1192,7 @@
                             "input_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -1202,7 +1202,7 @@
                             "output_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -1897,7 +1897,7 @@
                                 ]
                               },
                               "version": {
-                                "type": "number"
+                                "type": "integer"
                               }
                             },
                             "required": [
@@ -1915,7 +1915,7 @@
                             "type": "object",
                             "properties": {
                               "index": {
-                                "type": "number"
+                                "type": "integer"
                               },
                               "url": {
                                 "type": "string"
@@ -2039,7 +2039,7 @@
                             "input_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -2049,7 +2049,7 @@
                             "output_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -2652,7 +2652,7 @@
                                 ]
                               },
                               "version": {
-                                "type": "number"
+                                "type": "integer"
                               }
                             },
                             "required": [
@@ -2670,7 +2670,7 @@
                             "type": "object",
                             "properties": {
                               "index": {
-                                "type": "number"
+                                "type": "integer"
                               },
                               "url": {
                                 "type": "string"
@@ -2794,7 +2794,7 @@
                             "input_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -2804,7 +2804,7 @@
                             "output_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -3153,7 +3153,7 @@
                                 ]
                               },
                               "version": {
-                                "type": "number"
+                                "type": "integer"
                               }
                             },
                             "required": [
@@ -3171,7 +3171,7 @@
                             "type": "object",
                             "properties": {
                               "index": {
-                                "type": "number"
+                                "type": "integer"
                               },
                               "url": {
                                 "type": "string"
@@ -3295,7 +3295,7 @@
                             "input_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -3305,7 +3305,7 @@
                             "output_tokens": {
                               "anyOf": [
                                 {
-                                  "type": "number"
+                                  "type": "integer"
                                 },
                                 {
                                   "type": "null"
@@ -4365,7 +4365,7 @@
                       "additionalProperties": false
                     },
                     "rate_limit_per_minute": {
-                      "type": "number"
+                      "type": "integer"
                     },
                     "expires_at": {
                       "anyOf": [
@@ -4552,13 +4552,13 @@
                             "type": "string"
                           },
                           "model_calls": {
-                            "type": "number"
+                            "type": "integer"
                           },
                           "input_tokens": {
-                            "type": "number"
+                            "type": "integer"
                           },
                           "output_tokens": {
-                            "type": "number"
+                            "type": "integer"
                           },
                           "cost_usd": {
                             "anyOf": [

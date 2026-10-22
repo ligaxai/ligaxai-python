@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from ligaxai import AsyncPage, RequestOptions, SyncPage
-from ligaxai._generated import ExampleModel
+from ligaxai import AsyncPage, BaseModel, RequestOptions, SyncPage
 from ligaxai._pagination import PageRequest
 from tests.conftest import Recorder, json_response, make_async_client, make_sync_client
+
+
+class ExampleModel(BaseModel):
+    """No v0.1 endpoint paginates by cursor yet; the pager is exercised with a local model."""
+
+    id: str
 
 
 def page_body(ids: list[str], next_page: str | None) -> dict[str, object]:

@@ -4,9 +4,80 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [Unreleased] — 0.1.0
 
 ### Added
+
+- **Agent API v0.1** (`SPEC_VERSION` = `public-api-spec-v0.1.0`), identical on `LigaX` and
+  `AsyncLigaX`: `runs.create` / `wait` / `stream` / `get` / `events` / `follow_events` /
+  `cancel` / `resolve_interrupt`, `conversations.get`, `profiles.list` / `get`,
+  `keys.self`, `usage.get`. Response models are generated from the pinned spec and
+  re-exported in `ligaxai.types`.
+- `RunStream` / `AsyncRunStream` over the engine's LAE frames: `RunEvent(type, seq,
+  payload, run_id)`, `run_id` / `conversation_id` from `X-Run-Id` / `X-Conversation-Id`,
+  `last_seq` for resuming with `follow_events(after=)`, `text_stream()`, `final_text()`,
+  context-manager use; a JSON answer (idempotent replay) falls back to `stream.run`.
+- `TextAssembler`: offset-addressed text assembly in UTF-16 code units — replay-safe,
+  emits only new contiguous text, never splits a surrogate pair, answer in `part.start`
+  order.
+- `ligaxai.fastapi.run_stream_route()`: a server-side endpoint that streams a run to the
+  browser without exposing the key; `encode_run_event()`.
+- `gen_types.py --check` (in `make check` and CI): the generated models cannot drift from
+  `openapi/openapi.json`.
+- Conformance cases for `runs.create`, `runs.get` and a non-retried `402`; the harness
+  can assert a request count (`expect.requests`).
+- **Webhook endpoints** (scope `webhooks:manage`) on both clients:
+  `webhooks.create(url=, event_types=, description=, profile_ids=)` (returns the signing
+  `secret` once), `list`, `get`, `update` (only the fields given are sent), `delete`,
+  `test` (→ `WebhookDelivery`).
+- Typed webhook events, generated from the spec's top-level `webhooks` section:
+  `RunWebhookEvent` (`run.completed` / `failed` / `canceled` / `requires_action`),
+  `ApiKeyLimitWebhookEvent`, `WebhookTestEvent`; `UnknownWebhookEvent` for a type added
+  later. `webhooks.verify_signature()` and `webhooks.parse_event()`.
+- `ligaxai.fastapi.webhook_dependency(secret)`: verifies a request's raw body and yields the
+  typed event, or answers `400`.
+- **Browser access** (platform Phase 5): `client_tokens.create(profile_id=, end_user=,
+  conversation_id=, expires_in=)` on both clients mints a short-lived `lgx_ct_…` token for
+  one profile and one end user (scope `client_tokens:write`) → `ClientToken`. A client
+  constructed with a client token presents it as the bearer, for tests and tools acting as
+  the browser. `POST /widget/sessions` is browser-only and not mounted.
+- `ligaxai.fastapi.client_token_route(client, profile_id, resolve_end_user, expires_in=)`:
+  mints a token for the signed-in user (`None` → `401`) and returns `{token, expires_at}`
+  with `Cache-Control: no-store`.
+- `openapi/openapi.json` re-pinned with `/client_tokens` and `/widget/sessions`;
+  `ClientToken`, `ClientTokenCreateRequest`, `WidgetSession`, `WidgetSessionCreateRequest`
+  generated.
+- **End users' own accounts** (platform Phase 6; `SPEC_VERSION` = `public-api-spec-v0.3.0`)
+  on both clients: `connect_sessions.create(connector_key=, profile_id=, end_user=)`
+  (scope `connections:write`) → `ConnectSession` with the `connect_url` a browser opens in a
+  popup; `connect_sessions.get(session_id, end_user_id=)`; `connect_sessions.wait(...)`,
+  which polls every `poll_interval` (2 s) until the session leaves `pending` and raises
+  `TimeoutError` after `timeout` (600 s; `None` waits for the session's own expiry);
+  `end_users.connections.list(end_user_id)` → `EndUserConnectionList` and
+  `end_users.connections.delete(end_user_id, connection_id)` → `EndUserConnectionDeleted`.
+- `connection.created` / `connection.deleted` webhooks: subscribable through
+  `webhooks.create(event_types=)`, and `webhooks.verify()` returns the hand-written
+  `ConnectionCreatedWebhookEvent` / `ConnectionDeletedWebhookEvent` (the spec's `webhooks`
+  section does not describe their bodies yet).
+- README: an end-user connections section with a FastAPI recipe (a route that starts a
+  connect session for the signed-in user and returns `connect_url`, plus a status route)
+  and the browser popup-and-poll flow.
+
+### Changed
+
+- `gen_types.py` generates into a temporary directory in both modes, so `--check` no longer
+  reports drift for a line between 88 and 100 columns that `make gen-types` wrote unsplit.
+- `webhooks.verify()` returns a typed event (dispatched on `type`) instead of the parsed
+  JSON, and reports a malformed signature header as `WebhookVerificationError`.
+- 422 is never retried (with 402 and 403), matching the TypeScript SDK.
+- `examples/fastapi-app` is a working sample: `/me`, `/ask` (`runs.wait`), `/chat`
+  (`run_stream_route`) and a one-file streaming chat page.
+
+### Removed
+
+- The template's example `health` resource (the Agent API has no `/health`).
+
+### Template baseline
 
 - Template skeleton: `LigaX` / `AsyncLigaX` clients with env-based
   configuration, `with_options()`, context managers and `http_client` injection.

@@ -30,7 +30,7 @@ def spec_version() -> str:
     env = os.environ.get("SPEC_VERSION")
     if env:
         return env.strip()
-    return (ROOT / "SPEC_VERSION").read_text().strip()
+    return (ROOT / "SPEC_VERSION").read_text(encoding="utf-8").strip()
 
 
 def asset_url(version: str, name: str) -> str:

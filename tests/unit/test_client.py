@@ -12,7 +12,15 @@ from ligaxai import (
     RequestOptions,
     __version__,
 )
-from tests.conftest import TEST_API_KEY, TEST_BASE_URL, Recorder, json_response, make_sync_client
+from tests.conftest import (
+    TEST_API_KEY,
+    TEST_BASE_URL,
+    Recorder,
+    aping,
+    json_response,
+    make_sync_client,
+    ping,
+)
 
 
 def test_api_key_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -62,7 +70,7 @@ def test_rejects_foreign_http_client() -> None:
 def test_headers_sent(recorder: Recorder) -> None:
     recorder.responses = [json_response()]
     client = make_sync_client(recorder, default_headers={"X-Custom": "1"})
-    client.health.get(options=RequestOptions(headers={"X-Per-Call": "2"}))
+    ping(client, options=RequestOptions(headers={"X-Per-Call": "2"}))
     req = recorder.requests[0]
     assert req.headers["Authorization"] == f"Bearer {TEST_API_KEY}"
     assert req.headers["Accept"] == "application/json"
@@ -74,7 +82,7 @@ def test_headers_sent(recorder: Recorder) -> None:
 
 def test_user_agent(recorder: Recorder) -> None:
     recorder.responses = [json_response()]
-    make_sync_client(recorder).health.get()
+    ping(make_sync_client(recorder))
     ua = recorder.requests[0].headers["User-Agent"]
     assert ua.startswith(f"ligaxai-python/{__version__} (python/")
 
@@ -88,18 +96,18 @@ def test_with_options_overrides_and_shares_pool(recorder: Recorder) -> None:
     assert client.max_retries == 5
     assert client.api_key == TEST_API_KEY
     assert copy._http is client._http
-    copy.health.get()
+    ping(copy)
     assert recorder.requests[0].headers["Authorization"] == "Bearer other"
     assert recorder.requests[0].headers["X-A"] == "b"
     # The copy does not own the pool, so closing it leaves the original usable.
     copy.close()
-    client.health.get()
+    ping(client)
     client.close()
 
 
 def test_response_carries_request_id(recorder: Recorder) -> None:
     recorder.responses = [json_response(headers={"x-request-id": "req_abc"})]
-    result = make_sync_client(recorder).health.get()
+    result = ping(make_sync_client(recorder))
     assert result.status == "ok"
     assert result.request_id == "req_abc"
 
@@ -111,7 +119,7 @@ async def test_async_client_round_trip(recorder: Recorder) -> None:
         base_url=TEST_BASE_URL,
         http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(recorder.handler)),
     ) as client:
-        result = await client.health.get()
+        result = await aping(client)
         assert result.version == "1"
         copy = client.with_options(max_retries=0)
         assert copy.max_retries == 0

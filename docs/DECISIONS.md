@@ -105,3 +105,27 @@ dispatches on `type`; an unrecognised `type` becomes the hand-written
 type makes the server retry it for 27 hours. A known type missing a required field still
 raises — that is contract drift worth seeing. A malformed `webhook-signature` (no `v1,`,
 bad base64) is a `WebhookVerificationError`, never a bare `ValueError`.
+
+## 2026-10-22 — `connect_sessions.wait()` raises `TimeoutError`; outcomes are not errors
+
+**Decision.** `wait` polls `get` at a fixed `poll_interval` (default 2 s, the platform
+guide's browser cadence; no backoff, because a person is clicking through a consent screen)
+until the status leaves `pending`, and returns the settled session. `denied`, `failed` and
+`expired` are returned, not raised — they are user outcomes the caller branches on.
+Running out of `timeout` (default 600 s) raises the builtin `TimeoutError`, unlike
+`runs.wait(max_wait=)`, which returns the run as it stands: a still-pending session has no
+useful partial state, and `APITimeoutError` is reserved for a transport timeout with a
+request attached. `timeout=None` waits for the server to expire the session itself.
+
+## 2026-10-22 — `connection.*` webhook events are hand-written until the spec has them
+
+**Context.** Spec 0.3.0 accepts `connection.created` / `connection.deleted` in
+`event_types`, but its top-level `webhooks` section does not describe their bodies, so the
+generator has nothing to emit.
+
+**Decision.** `ConnectionCreatedWebhookEvent` and `ConnectionDeletedWebhookEvent` live in
+`_webhooks.py`, shaped from the platform's emitter (`end-user-connections.ts`), and
+`parse_event` dispatches on them; any other unknown type still becomes
+`UnknownWebhookEvent`. When the spec gains their bodies, they move to `SCHEMA_NAMES` and
+are drift-checked like the rest. `end_users.connections` is a nested namespace
+(`client.end_users.connections`) mirroring the URL, so a later per-user endpoint has a home.

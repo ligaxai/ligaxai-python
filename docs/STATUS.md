@@ -12,9 +12,14 @@ Last updated: 2026-10-22
 | Agent API v0.1 resources  | implemented | branch `feat/agent-api-v0.1` (local, unpushed); gates green             |
 | Webhook endpoints + events | implemented | `feat/agent-api-v0.1` (local); spec re-pinned with `/webhooks` + `webhooks` section |
 | Browser access (client tokens) | implemented | branch `feat/browser-access` (local); spec re-pinned with `/client_tokens` |
+| End-user connections      | implemented | branch `feat/end-user-connections` (local); spec re-pinned `public-api-spec-v0.3.0` |
 | First PyPI release        | planned     | needs pending trusted publisher + `pypi` environment on GitHub          |
 
 ## Team activity
+
+- 2026-10-22 — end users' own accounts (platform Phase 6) on `feat/end-user-connections`:
+  `client.connect_sessions` (create/get/wait), `client.end_users.connections` (list/delete),
+  typed `connection.created` / `connection.deleted` webhook events; spec v0.3.0; 266 tests.
 
 - 2026-10-22 — browser access (platform Phase 5) on `feat/browser-access`:
   `client.client_tokens.create`, FastAPI `client_token_route`, client tokens accepted as
@@ -40,8 +45,11 @@ Last updated: 2026-10-22
 - Enum fields (`run.status`, `profile.type`, …) are `Literal`s: a value the server adds
   later fails validation until the spec and SDK are bumped.
 - 409 is still retried by the shared policy; none of the API's 409s are transient
-  (`webhook_endpoint_limit`, `webhook_endpoint_disabled` included) unless the server sends
-  `x-should-retry: false`.
+  (`webhook_endpoint_limit`, `webhook_endpoint_disabled`, `end_user_connections_off`
+  included) unless the server sends `x-should-retry: false` — the platform sends it only
+  for the webhook-endpoint ones today.
+- The `connection.*` webhook bodies are hand-written models; move them to the generator
+  when the platform spec's `webhooks` section describes them.
 - `webhooks.create` is retried on 5xx / transport errors like any POST, but the platform
   does not honour `Idempotency-Key` on `POST /webhooks`: a retried create can leave a
   duplicate endpoint whose secret was never seen.

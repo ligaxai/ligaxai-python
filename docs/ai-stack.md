@@ -47,7 +47,7 @@ See `Makefile` (`make help`). The gate is `make check && make test`.
 | `LIGAX_API_KEY`  | bearer token (required unless `api_key=`)       |
 | `LIGAX_BASE_URL` | overrides `_client.DEFAULT_BASE_URL`            |
 | `LIGAX_LOG`      | `debug\|info\|warn\|error\|off` package logging |
-| `SPEC_VERSION` (file)   | pinned spec tag: `public-api-spec-v0.1.0` (`openapi/openapi.json`) |
+| `SPEC_VERSION` (file)   | pinned spec tag: `public-api-spec-v0.3.0` (`openapi/openapi.json`) |
 
 ## CI / release
 

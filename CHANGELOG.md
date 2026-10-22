@@ -47,6 +47,21 @@ All notable changes to this project are documented here. The format follows
 - `openapi/openapi.json` re-pinned with `/client_tokens` and `/widget/sessions`;
   `ClientToken`, `ClientTokenCreateRequest`, `WidgetSession`, `WidgetSessionCreateRequest`
   generated.
+- **End users' own accounts** (platform Phase 6; `SPEC_VERSION` = `public-api-spec-v0.3.0`)
+  on both clients: `connect_sessions.create(connector_key=, profile_id=, end_user=)`
+  (scope `connections:write`) → `ConnectSession` with the `connect_url` a browser opens in a
+  popup; `connect_sessions.get(session_id, end_user_id=)`; `connect_sessions.wait(...)`,
+  which polls every `poll_interval` (2 s) until the session leaves `pending` and raises
+  `TimeoutError` after `timeout` (600 s; `None` waits for the session's own expiry);
+  `end_users.connections.list(end_user_id)` → `EndUserConnectionList` and
+  `end_users.connections.delete(end_user_id, connection_id)` → `EndUserConnectionDeleted`.
+- `connection.created` / `connection.deleted` webhooks: subscribable through
+  `webhooks.create(event_types=)`, and `webhooks.verify()` returns the hand-written
+  `ConnectionCreatedWebhookEvent` / `ConnectionDeletedWebhookEvent` (the spec's `webhooks`
+  section does not describe their bodies yet).
+- README: an end-user connections section with a FastAPI recipe (a route that starts a
+  connect session for the signed-in user and returns `connect_url`, plus a status route)
+  and the browser popup-and-poll flow.
 
 ### Changed
 

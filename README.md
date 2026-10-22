@@ -120,6 +120,11 @@ async client, `await` it; `runs.stream` / `runs.follow_events` can also be used 
 | `webhooks.delete(webhook_id)` | `DELETE /webhooks/{id}` | `WebhookEndpointDeleted` |
 | `webhooks.test(webhook_id)` | `POST /webhooks/{id}/test` | `WebhookDelivery` |
 | `client_tokens.create(profile_id=, end_user=, conversation_id=, expires_in=)` | `POST /client_tokens` | `ClientToken` |
+| `connect_sessions.create(connector_key=, profile_id=, end_user=)` | `POST /connect_sessions` | `ConnectSession` |
+| `connect_sessions.get(session_id, end_user_id=None)` | `GET /connect_sessions/{id}` | `ConnectSession` |
+| `connect_sessions.wait(session_id, end_user_id=None, poll_interval=2, timeout=600)` — poll `get` until the session leaves `pending` | `GET /connect_sessions/{id}` | `ConnectSession` |
+| `end_users.connections.list(end_user_id)` | `GET /end_users/{id}/connections` | `EndUserConnectionList` |
+| `end_users.connections.delete(end_user_id, connection_id)` | `DELETE /end_users/{id}/connections/{cid}` | `EndUserConnectionDeleted` |
 
 Types live in `ligaxai.types`. Fields are snake_case, exactly as on the wire. Every model
 keeps fields the server adds later (`model.model_extra`) and carries `.request_id`.
@@ -238,7 +243,8 @@ client.webhooks.test(endpoint.id)           # sends a webhook.test event now
 ```
 
 Events: `run.completed`, `run.failed`, `run.canceled`, `run.requires_action`,
-`api_key.limit_reached` (plus `webhook.test`, sent only by `webhooks.test`).
+`api_key.limit_reached`, `connection.created`, `connection.deleted` (plus `webhook.test`,
+sent only by `webhooks.test`).
 `webhooks.update(id, status="disabled")` pauses an endpoint; an endpoint that keeps failing
 for five days is disabled by the server (`disabled_reason == "failing"`) and re-enabled
 with `status="active"`. Store the secret like any credential — in your secret manager,
@@ -268,8 +274,9 @@ elif isinstance(event, ApiKeyLimitWebhookEvent):
 The event types are `RunWebhookEvent` (`type` is one of the four `run.*` values; `data`
 carries `id`, `status`, `profile_id`, `conversation_id`, `end_user_id`, `metadata`, and
 `error_code` / `interrupt_id` / `interrupt_kind` when they apply),
-`ApiKeyLimitWebhookEvent`, `WebhookTestEvent`, and `UnknownWebhookEvent` for a type added
-after your SDK version — answer 2xx and ignore it. `webhooks.verify_signature()` and
+`ApiKeyLimitWebhookEvent`, `ConnectionCreatedWebhookEvent` (`data`: `id`, `end_user_id`,
+`status`), `ConnectionDeletedWebhookEvent` (`data`: `id`, `connector_key`, `end_user_id`),
+`WebhookTestEvent`, and `UnknownWebhookEvent` for a type added after your SDK version — answer 2xx and ignore it. `webhooks.verify_signature()` and
 `webhooks.parse_event()` are the two halves, if you want the body some other way.
 
 In FastAPI, `webhook_dependency` reads the raw body for you and answers `400` on a bad
@@ -398,6 +405,106 @@ want to act as the browser; it expires in minutes and the client cannot refresh 
 `POST /widget/sessions` (publishable keys) is for the browser widget only and has no
 method here.
 
+## End users' own accounts
+
+By default a profile's agent acts with the workspace's **shared** connections. With
+end-user connections switched on for the profile (*End users can connect their own
+accounts*, under the agent's API & Integrations), each of your users connects **their own**
+Gmail, Outlook, Dynamics and so on, and a run that names `end_user` acts with that user's
+account — falling back to the profile's shared one where they have none, if the profile
+allows it.
+
+Connecting is a popup the user completes in their browser. Your server starts a **connect
+session** for the signed-in user (key scope `connections:write`) and returns its
+`connect_url`; the page opens it in a popup and polls until the session settles:
+
+```python
+from fastapi import Depends, FastAPI, HTTPException, Request
+from ligaxai import APIStatusError, AsyncLigaX
+from ligaxai.fastapi import client_dependency
+
+app = FastAPI()
+get_client = client_dependency()  # a secret key with connections:write and connections:read
+
+
+def current_user_id(request: Request) -> str:
+    user = request.state.user          # from YOUR auth — never from the request body
+    if user is None:
+        raise HTTPException(401)
+    return user.id
+
+
+@app.post("/integrations/{connector_key}/connect")
+async def start_connect(
+    connector_key: str,
+    user_id: str = Depends(current_user_id),
+    client: AsyncLigaX = Depends(get_client),
+) -> dict[str, str | None]:
+    try:
+        session = await client.connect_sessions.create(
+            connector_key=connector_key,   # e.g. "gmail"; check it against your own list
+            profile_id="prf_...",
+            end_user=user_id,
+        )
+    except APIStatusError as exc:      # 409 end_user_connections_off, 422 connector_not_…
+        raise HTTPException(exc.status_code, exc.code) from exc
+    return {"id": session.id, "connect_url": session.connect_url}
+
+
+@app.get("/integrations/sessions/{session_id}")
+async def connect_status(
+    session_id: str,
+    user_id: str = Depends(current_user_id),
+    client: AsyncLigaX = Depends(get_client),
+) -> dict[str, str | None]:
+    # end_user_id from the session, so one user cannot read another's connect session.
+    session = await client.connect_sessions.get(session_id, end_user_id=user_id)
+    return {"status": session.status, "failure_code": session.failure_code}
+```
+
+In the browser, open the popup **inside the click handler** (or browsers block it), then
+poll your status route every two seconds until `status` is no longer `pending`:
+
+```js
+const { id, connect_url } = await fetch(`/integrations/gmail/connect`, { method: 'POST' })
+  .then(r => r.json());
+window.open(connect_url, 'ligax-connect', 'width=520,height=720');
+let status = 'pending';
+while (status === 'pending') {
+  await new Promise(r => setTimeout(r, 2000));
+  ({ status } = await fetch(`/integrations/sessions/${id}`).then(r => r.json()));
+}
+// 'succeeded' — or 'denied', 'failed' (see failure_code), 'expired'
+```
+
+The popup shows the provider's own consent screen and closes itself when the user is done.
+LigaX never redirects back to an address taken from the request, so popup-and-poll is the
+way to learn the outcome; a `connection.created` webhook is also sent the first time a
+session is seen to succeed. A connector that needs typed credentials (an API key an admin
+must enter) answers `422 connector_not_connectable`.
+
+Server-side code can wait instead of polling by hand — `wait` returns the settled session
+(`denied`, `failed` and `expired` are outcomes, not exceptions) and raises `TimeoutError`
+if it is still pending after `timeout` seconds:
+
+```python
+session = client.connect_sessions.wait(session.id, end_user_id=user_id, timeout=300)
+if session.status == "succeeded":
+    print(session.connection_id)
+```
+
+List and disconnect a user's own accounts (never the workspace's shared ones):
+
+```python
+for conn in client.end_users.connections.list(user_id).data:
+    print(conn.id, conn.connector_key, conn.display_name, conn.status)
+client.end_users.connections.delete(user_id, conn.id)   # sends connection.deleted
+```
+
+With a [client token](#browser-access-minting-client-tokens) the browser can call
+`POST /connect_sessions` and the list/delete endpoints itself, without `end_user` — the
+token already names its user and can reach only that user's accounts.
+
 ## Runtime support
 
 | Python | Status                                            |
@@ -423,7 +530,7 @@ make build        # sdist + wheel
 make gen-types    # regenerate src/ligaxai/_generated/models.py from openapi/openapi.json
 ```
 
-The contract is pinned in `SPEC_VERSION` (`public-api-spec-v0.1.0`) and copied to
+The contract is pinned in `SPEC_VERSION` (`public-api-spec-v0.3.0`) and copied to
 `openapi/openapi.json` from the platform's `docs/public-api/spec/openapi.json`.
 `make check-types` fails if the generated models are stale against it.
 

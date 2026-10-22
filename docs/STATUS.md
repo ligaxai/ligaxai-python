@@ -13,9 +13,15 @@ Last updated: 2026-10-22
 | Webhook endpoints + events | implemented | `feat/agent-api-v0.1` (local); spec re-pinned with `/webhooks` + `webhooks` section |
 | Browser access (client tokens) | implemented | branch `feat/browser-access` (local); spec re-pinned with `/client_tokens` |
 | End-user connections      | implemented | branch `feat/end-user-connections` (local); spec re-pinned `public-api-spec-v0.3.0` |
+| Files + protocols         | implemented | branch `feat/files-and-protocols` (local, unpushed); spec `public-api-spec-v0.5.0` |
 | First PyPI release        | planned     | needs pending trusted publisher + `pypi` environment on GitHub          |
 
 ## Team activity
+
+- 2026-10-22 — files and protocols (platform Phases 7–8) on `feat/files-and-protocols`:
+  spec v0.5.0; `client.files` (create/get/delete, multipart, 25 MB guard), run
+  `attachments`, `webhooks.create(idempotency_key=)` with replay and `409` retry covered;
+  README Files and MCP / A2A sections; 292 tests.
 
 - 2026-10-22 — end users' own accounts (platform Phase 6) on `feat/end-user-connections`:
   `client.connect_sessions` (create/get/wait), `client.end_users.connections` (list/delete),

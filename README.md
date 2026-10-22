@@ -102,7 +102,7 @@ async client, `await` it; `runs.stream` / `runs.follow_events` can also be used 
 
 | Call | Endpoint | Returns |
 | --- | --- | --- |
-| `runs.create(profile_id=, input=, conversation_id=, end_user=, model=, mode="wait"\|"async", metadata=, idempotency_key=)` | `POST /runs` | `Run` |
+| `runs.create(profile_id=, input=, conversation_id=, end_user=, model=, mode="wait"\|"async", metadata=, attachments=, idempotency_key=)` | `POST /runs` | `Run` |
 | `runs.wait(...)` — `create` then poll `get` until terminal or `requires_action` | `POST /runs`, `GET /runs/{id}` | `Run` |
 | `runs.stream(...)` | `POST /runs` (`mode: "stream"`) | `RunStream` |
 | `runs.get(run_id)` | `GET /runs/{id}` | `Run` |
@@ -114,7 +114,9 @@ async client, `await` it; `runs.stream` / `runs.follow_events` can also be used 
 | `profiles.list()` / `profiles.get(profile_id)` | `GET /profiles[/{id}]` | `ProfileList` / `Profile` |
 | `keys.self()` | `GET /keys/self` | `ApiKey` |
 | `usage.get(start=, end=, group_by=)` | `GET /usage` | `UsageReport` |
-| `webhooks.create(url=, event_types=, description=, profile_ids=)` | `POST /webhooks` | `WebhookEndpointWithSecret` |
+| `files.create(file=, end_user_id=None)` | `POST /files` (multipart) | `FileObject` |
+| `files.get(file_id)` / `files.delete(file_id)` | `GET` / `DELETE /files/{id}` | `FileObject` / `FileDeleted` |
+| `webhooks.create(url=, event_types=, description=, profile_ids=, idempotency_key=)` | `POST /webhooks` | `WebhookEndpointWithSecret` |
 | `webhooks.list()` / `webhooks.get(webhook_id)` | `GET /webhooks[/{id}]` | `WebhookEndpointList` / `WebhookEndpoint` |
 | `webhooks.update(webhook_id, url=, description=, event_types=, profile_ids=, status=)` | `PATCH /webhooks/{id}` | `WebhookEndpoint` |
 | `webhooks.delete(webhook_id)` | `DELETE /webhooks/{id}` | `WebhookEndpointDeleted` |
@@ -220,6 +222,28 @@ it when contacting support.
 `LIGAX_LOG=debug|info|warn|error|off` configures the `ligaxai`
 logger. `Authorization` values are redacted before they reach any handler.
 
+## Files
+
+Upload a file, then attach its id to a run so the agent can read it (scope `files:write`):
+
+```python
+f = client.files.create(file="contract.pdf")      # a path, bytes, a file opened "rb",
+                                                  # or ("name.pdf", data, "application/pdf")
+run = client.runs.wait(profile_id="prf_...", input="Summarise the termination clause",
+                       attachments=[f.id])
+client.files.delete(f.id)                         # optional: files expire after 30 days
+```
+
+- **Limits:** up to 25 MB per file — a larger one raises `ValueError` before anything is
+  uploaded — and up to 10 attachments per run. `runs.stream` takes `attachments=` too.
+- **Types:** whether a type can be read depends on the profile's model; a model that can't
+  read it refuses the attachment.
+- **No download:** `files.get` returns metadata only (`filename`, `content_type`,
+  `size_bytes`, `expires_at`).
+- **Ownership:** a client token uploads for its own user, and only that user's runs can
+  attach the file. A secret key may pass `end_user_id=` to upload for one of your users.
+- The file is read into memory before sending, so a retried upload re-sends the same bytes.
+
 ## Webhooks
 
 LigaX can `POST` an event to your server when a run finishes, fails, is canceled or waits
@@ -241,6 +265,11 @@ endpoint = client.webhooks.create(
 save_secret(endpoint.id, endpoint.secret)   # whsec_… — returned once, never again
 client.webhooks.test(endpoint.id)           # sends a webhook.test event now
 ```
+
+`create` is idempotent: every call carries an `Idempotency-Key` (reused across the SDK's
+own retries), and a retry with the same key gets the endpoint — and secret — the first
+attempt created instead of a second endpoint. Pass `idempotency_key=` (for example your
+Zap's subscription id) to make that hold across processes too.
 
 Events: `run.completed`, `run.failed`, `run.canceled`, `run.requires_action`,
 `api_key.limit_reached`, `connection.created`, `connection.deleted` (plus `webhook.test`,
@@ -504,6 +533,40 @@ client.end_users.connections.delete(user_id, conn.id)   # sends connection.delet
 With a [client token](#browser-access-minting-client-tokens) the browser can call
 `POST /connect_sessions` and the list/delete endpoints itself, without `end_user` — the
 token already names its user and can reach only that user's accounts.
+
+## Use from MCP / A2A clients
+
+Every published agent profile is also an **MCP server** and an **A2A agent**, so Claude
+Code, Cursor, the OpenAI Agents SDK or another agent can call it directly — no SDK needed.
+They use the same API key, spend limits, webhooks and audit trail as `runs.create`. Send a
+secret key with *Start runs* and *Read runs* as `Authorization: Bearer …`, and add
+`X-LigaX-End-User: <your user id>` to act for one of your users. The platform's MCP and A2A
+guide (`docs/public-api/mcp-and-a2a.md`) has the tools (`ask`, `get_run`, `respond`), the
+task-state mapping and the supported methods.
+
+**Claude Code:**
+
+```bash
+claude mcp add --transport http ligax-support \
+  https://enterprise.ligax.ai/api/public/v1/mcp/prf_... \
+  --header "Authorization: Bearer $LIGAX_API_KEY"
+```
+
+**OpenAI Agents SDK:**
+
+```python
+import os
+from agents.mcp import MCPServerStreamableHttp
+
+ligax = MCPServerStreamableHttp(params={
+    "url": "https://enterprise.ligax.ai/api/public/v1/mcp/prf_...",
+    "headers": {"Authorization": f"Bearer {os.environ['LIGAX_API_KEY']}"},
+})
+```
+
+**A2A:** the agent card is at
+`https://enterprise.ligax.ai/api/public/v1/a2a/prf_.../.well-known/agent-card.json` (it
+needs the API key too); JSON-RPC calls go to `…/a2a/prf_...`, A2A 1.0 and 0.3.
 
 ## Runtime support
 

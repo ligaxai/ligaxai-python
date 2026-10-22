@@ -129,3 +129,18 @@ generator has nothing to emit.
 `UnknownWebhookEvent`. When the spec gains their bodies, they move to `SCHEMA_NAMES` and
 are drift-checked like the rest. `end_users.connections` is a nested namespace
 (`client.end_users.connections`) mirroring the URL, so a later per-user endpoint has a home.
+
+## 2026-10-22 — `files.create` reads the file into memory; MCP / A2A are not mounted
+
+**Decision.** `files.create` normalises every input (path, bytes, tuple, binary file object)
+to `(filename, bytes, content_type)` before the pipeline sees it, and the pipeline's new
+`files=` / `data=` parameters accept bytes only. The request is rebuilt on every retry, so a
+stream would be empty on the second attempt; at the platform's 25 MB cap, holding the
+bytes is cheap. The cap is checked first — a path by `stat`, a file object by reading one
+byte past the limit — so an oversized file raises `ValueError` without a request. A larger
+file is a usage error, not an API status, which is why it is not an `APIStatusError`.
+
+The spec's `/mcp/{profile_id}` and `/a2a/{profile_id}` endpoints are generated (so the spec
+stays whole) but not mounted on a client: MCP and A2A client libraries speak those
+protocols, and a JSON-RPC passthrough here would duplicate them badly. The README points
+to them instead.

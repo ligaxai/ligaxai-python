@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased] — 0.1.0
 
+### Changed
+
+- Spec pinned to `public-api-spec-v0.6.0`. A run's `Idempotency-Key` replay that arrives while the
+  first request is still starting answers `409 idempotency_in_progress` with `x-should-retry: true`,
+  which the client retries. Run events are a safe subset: tool events carry name, status and
+  duration only, and `reasoning.delta` / `usage.delta` are no longer sent. Anonymous website visitors
+  can chat only; answering an approval with their token is `403 approval_not_allowed`.
+
 ### Added
 
 - **Agent API v0.1** (`SPEC_VERSION` = `public-api-spec-v0.1.0`), identical on `LigaX` and
@@ -59,6 +67,20 @@ All notable changes to this project are documented here. The format follows
   `webhooks.create(event_types=)`, and `webhooks.verify()` returns the hand-written
   `ConnectionCreatedWebhookEvent` / `ConnectionDeletedWebhookEvent` (the spec's `webhooks`
   section does not describe their bodies yet).
+- **Files** (platform Phase 8; `SPEC_VERSION` = `public-api-spec-v0.5.0`) on both clients:
+  `files.create(file=, end_user_id=None)` uploads one file as multipart field `file` from a
+  path, bytes, a `(filename, bytes[, content_type])` tuple or a binary file object →
+  `FileObject`; a file over 25 MB raises `ValueError` before any request. `files.get` →
+  `FileObject`, `files.delete` → `FileDeleted`. `runs.create` / `wait` / `stream` take
+  `attachments=[file ids]` (up to 10).
+- `webhooks.create(idempotency_key=)`. Create was already sent with a minted
+  `Idempotency-Key`; the platform now honours it — a replay answers `200` +
+  `Idempotent-Replayed: true` with the same endpoint and secret, and a concurrent duplicate's
+  `409` + `x-should-retry: true` is retried by the existing policy.
+- README: a Files section and "Use from MCP / A2A clients" (Claude Code `claude mcp add`,
+  OpenAI Agents SDK `MCPServerStreamableHttp`, the A2A agent-card URL). The protocol
+  endpoints are generated into the models (`McpJsonRpcRequest`, `A2aJsonRpcRequest`) but not
+  mounted on a client — MCP and A2A client libraries speak them.
 - README: an end-user connections section with a FastAPI recipe (a route that starts a
   connect session for the signed-in user and returns `connect_url`, plus a status route)
   and the browser popup-and-poll flow.

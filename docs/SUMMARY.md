@@ -2,8 +2,8 @@
 
 `ligaxai` is the Python SDK for the **LigaX Agent API** (`/api/public/v1`), built from an
 OpenAI/Anthropic-shaped template. v0.1 covers runs, conversations, profiles, keys and
-usage, webhook endpoints, client tokens and end-user connections against the pinned spec
-`public-api-spec-v0.3.0`.
+usage, webhook endpoints, client tokens, end-user connections and files against the pinned spec
+`public-api-spec-v0.6.0`.
 
 ## Package shape
 
@@ -12,6 +12,7 @@ ligaxai
 ├── LigaX / AsyncLigaX   _client.py     env config, with_options, context managers
 ├── resources.runs                   create/wait/stream/get/events/follow_events/cancel/resolve_interrupt
 ├── resources.{conversations,profiles,keys,usage}
+├── resources.files                  create/get/delete (multipart upload, 25 MB client-side guard)
 ├── resources.webhooks               create/list/get/update/delete/test (webhook endpoints)
 ├── resources.client_tokens          create (short-lived lgx_ct_ token for one browser)
 ├── resources.connect_sessions       create/get/wait (an end user connects their own account)
@@ -36,7 +37,7 @@ ligaxai
 - Every Agent API v0.1 endpoint on both clients; streaming with replay-safe text
   assembly checked against a real recorded engine run.
 - `make check` (ruff, mypy strict, pyright strict, verifytypes 100 %, generated-model
-  drift), `make test` (266 tests), `make test-cov` (96 % against an 85 % floor),
+  drift), `make test` (292 tests), `make test-cov` (96 % against an 85 % floor),
   `make build` (wheel ships `py.typed`).
 - CI matrix 3.11–3.14 × three OSes; release by tag with PyPI trusted publishing.
 

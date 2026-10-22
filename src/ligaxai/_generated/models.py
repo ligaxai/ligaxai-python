@@ -63,6 +63,10 @@ class EndUser(BaseModel):
     name: str | None = Field(None, max_length=200)
 
 
+class Attachment(RootModel[str]):
+    root: str = Field(..., pattern="^file_[0-9A-Za-z]{24}$")
+
+
 class Metadata(RootModel[str]):
     root: str = Field(..., max_length=512)
 
@@ -77,6 +81,7 @@ class RunRequest(BaseModel):
     end_user: EndUser | None = None
     model: str | None = Field(None, max_length=200, min_length=1)
     mode: Literal["wait", "stream", "async"] | None = "wait"
+    attachments: list[Attachment] | None = Field(None, max_length=10)
     metadata: dict[str, Metadata] | None = None
 
 
@@ -123,6 +128,33 @@ class WebhookEndpointCreateRequest(BaseModel):
         ]
     ] = Field(..., min_length=1)
     profile_ids: list[ProfileId] | None = Field(None, max_length=50)
+
+
+class WebhooksCreateResponse200(BaseModel):
+    object: Literal["webhook_endpoint"]
+    id: str
+    url: str
+    description: str
+    event_types: list[
+        Literal[
+            "run.completed",
+            "run.failed",
+            "run.canceled",
+            "run.requires_action",
+            "api_key.limit_reached",
+            "connection.created",
+            "connection.deleted",
+        ]
+    ]
+    profile_ids: list[str]
+    status: Literal["active", "disabled"]
+    disabled_reason: Literal["manual", "failing"] | None
+    secret_hint: str
+    created_at: str
+    updated_at: str
+    secret: str = Field(
+        ..., description="The signing secret (`whsec_…`). Returned once; store it now."
+    )
 
 
 class WebhookEndpointWithSecret(BaseModel):
@@ -277,6 +309,37 @@ class EndUserConnectionDeleted(BaseModel):
     object: Literal["connection"]
     id: str
     deleted: Literal[True]
+
+
+class FileObject(BaseModel):
+    object: Literal["file"]
+    id: str
+    filename: str
+    content_type: str
+    size_bytes: int
+    end_user_id: str | None
+    created_at: str
+    expires_at: str
+
+
+class FileDeleted(BaseModel):
+    object: Literal["file"]
+    id: str
+    deleted: Literal[True]
+
+
+class McpJsonRpcRequest(BaseModel):
+    jsonrpc: Literal["2.0"]
+    id: str | int | None = None
+    method: str
+    params: dict[str, Any] | None = None
+
+
+class A2aJsonRpcRequest(BaseModel):
+    jsonrpc: Literal["2.0"]
+    id: str | int | None = None
+    method: str
+    params: dict[str, Any] | None = None
 
 
 class RequiredAction(BaseModel):

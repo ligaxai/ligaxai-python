@@ -21,7 +21,7 @@ from .._generated.models import (
     WebhookEndpointWithSecret,
 )
 from .._types import RequestOptions
-from ._base import AsyncAPIResource, SyncAPIResource, path_segment
+from ._base import AsyncAPIResource, SyncAPIResource, merge_options, path_segment
 
 __all__ = ["AsyncWebhooks", "WebhookEndpointStatus", "WebhookEventType", "Webhooks"]
 
@@ -83,6 +83,7 @@ class Webhooks(SyncAPIResource):
         event_types: Sequence[WebhookEventType],
         description: str | None = None,
         profile_ids: Sequence[str] | None = None,
+        idempotency_key: str | None = None,
         options: RequestOptions | None = None,
     ) -> WebhookEndpointWithSecret:
         """Create an endpoint. ``.secret`` (``whsec_…``) is returned **once** — store it now.
@@ -94,13 +95,20 @@ class Webhooks(SyncAPIResource):
             description: Up to 200 characters, shown in Settings → Developers.
             profile_ids: Narrow ``run.*`` events to these profiles (``prf_…``); omitted or
                 empty, every profile. ``api_key.limit_reached`` is never narrowed.
+            idempotency_key: Make a retry safe across processes. One is minted per call
+                when omitted, and reused by the SDK's own retries.
+
+        Creating is idempotent: a retry with the same key gets the endpoint the first
+        attempt created — same id, same secret — rather than a second endpoint. A retry
+        that races the first attempt is told to retry shortly (``409`` with
+        ``x-should-retry: true``), which the SDK's retry policy honours.
         """
         return self._client.request(
             "POST",
             "/webhooks",
             cast_to=WebhookEndpointWithSecret,
             json=_create_body(url, event_types, description, profile_ids),
-            options=options,
+            options=merge_options(options, idempotency_key=idempotency_key),
         )
 
     def list(self, *, options: RequestOptions | None = None) -> WebhookEndpointList:
@@ -165,6 +173,7 @@ class AsyncWebhooks(AsyncAPIResource):
         event_types: Sequence[WebhookEventType],
         description: str | None = None,
         profile_ids: Sequence[str] | None = None,
+        idempotency_key: str | None = None,
         options: RequestOptions | None = None,
     ) -> WebhookEndpointWithSecret:
         """Create an endpoint; the secret is returned once. See :meth:`Webhooks.create`."""
@@ -173,7 +182,7 @@ class AsyncWebhooks(AsyncAPIResource):
             "/webhooks",
             cast_to=WebhookEndpointWithSecret,
             json=_create_body(url, event_types, description, profile_ids),
-            options=options,
+            options=merge_options(options, idempotency_key=idempotency_key),
         )
 
     async def list(self, *, options: RequestOptions | None = None) -> WebhookEndpointList:

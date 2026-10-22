@@ -15,6 +15,7 @@ retries by the pipeline), so a retried ``create`` can never start a second run.
 from __future__ import annotations
 
 import time
+from collections.abc import Sequence
 from typing import Any, Literal, NotRequired, Required, TypeAlias
 
 import anyio
@@ -68,6 +69,7 @@ def _run_body(
     model: str | None,
     mode: str,
     metadata: dict[str, str] | None,
+    attachments: Sequence[str] | None = None,
 ) -> dict[str, Any]:
     body: dict[str, Any] = {"profile_id": profile_id, "input": input, "mode": mode}
     if conversation_id is not None:
@@ -76,6 +78,10 @@ def _run_body(
         body["end_user"] = {"id": end_user} if isinstance(end_user, str) else dict(end_user)
     if model is not None:
         body["model"] = model
+    if attachments is not None:
+        if isinstance(attachments, str):
+            raise TypeError("attachments takes a list of file ids, not a single string")
+        body["attachments"] = list(attachments)
     if metadata is not None:
         body["metadata"] = dict(metadata)
     return body
@@ -115,6 +121,7 @@ class Runs(SyncAPIResource):
         model: str | None = None,
         mode: Literal["wait", "async"] = "wait",
         metadata: dict[str, str] | None = None,
+        attachments: Sequence[str] | None = None,
         idempotency_key: str | None = None,
         options: RequestOptions | None = None,
     ) -> Run:
@@ -130,6 +137,8 @@ class Runs(SyncAPIResource):
             mode: ``"wait"`` holds the request until the run finishes (``202`` with the
                 run so far after 240 s); ``"async"`` returns at once — poll ``get``.
             metadata: Up to 16 string pairs, returned on the run.
+            attachments: Up to 10 ``file_…`` ids from ``files.create`` for the agent to
+                read. Whether a type can be read depends on the profile's model.
             idempotency_key: Make a retry safe across processes. One is minted per call
                 when omitted, and reused by the SDK's own retries.
         """
@@ -142,6 +151,7 @@ class Runs(SyncAPIResource):
             model=model,
             mode=mode,
             metadata=metadata,
+            attachments=attachments,
         )
         return self._client.request(
             "POST",
@@ -160,6 +170,7 @@ class Runs(SyncAPIResource):
         end_user: EndUserParam | str | None = None,
         model: str | None = None,
         metadata: dict[str, str] | None = None,
+        attachments: Sequence[str] | None = None,
         idempotency_key: str | None = None,
         options: RequestOptions | None = None,
     ) -> RunStream:
@@ -177,6 +188,7 @@ class Runs(SyncAPIResource):
             model=model,
             mode="stream",
             metadata=metadata,
+            attachments=attachments,
         )
         stream: Stream[ServerSentEvent] = self._client.request_stream(
             "POST",
@@ -195,6 +207,7 @@ class Runs(SyncAPIResource):
         end_user: EndUserParam | str | None = None,
         model: str | None = None,
         metadata: dict[str, str] | None = None,
+        attachments: Sequence[str] | None = None,
         idempotency_key: str | None = None,
         poll_interval: float = 1.0,
         max_poll_interval: float = 10.0,
@@ -216,6 +229,7 @@ class Runs(SyncAPIResource):
             model=model,
             mode="wait",
             metadata=metadata,
+            attachments=attachments,
             idempotency_key=idempotency_key,
             options=options,
         )
@@ -302,6 +316,7 @@ class AsyncRuns(AsyncAPIResource):
         model: str | None = None,
         mode: Literal["wait", "async"] = "wait",
         metadata: dict[str, str] | None = None,
+        attachments: Sequence[str] | None = None,
         idempotency_key: str | None = None,
         options: RequestOptions | None = None,
     ) -> Run:
@@ -315,6 +330,7 @@ class AsyncRuns(AsyncAPIResource):
             model=model,
             mode=mode,
             metadata=metadata,
+            attachments=attachments,
         )
         return await self._client.request(
             "POST",
@@ -333,6 +349,7 @@ class AsyncRuns(AsyncAPIResource):
         end_user: EndUserParam | str | None = None,
         model: str | None = None,
         metadata: dict[str, str] | None = None,
+        attachments: Sequence[str] | None = None,
         idempotency_key: str | None = None,
         options: RequestOptions | None = None,
     ) -> AsyncRunStreamManager:
@@ -348,6 +365,7 @@ class AsyncRuns(AsyncAPIResource):
             model=model,
             mode="stream",
             metadata=metadata,
+            attachments=attachments,
         )
         opts = merge_options(options, idempotency_key=idempotency_key)
 
@@ -368,6 +386,7 @@ class AsyncRuns(AsyncAPIResource):
         end_user: EndUserParam | str | None = None,
         model: str | None = None,
         metadata: dict[str, str] | None = None,
+        attachments: Sequence[str] | None = None,
         idempotency_key: str | None = None,
         poll_interval: float = 1.0,
         max_poll_interval: float = 10.0,
@@ -383,6 +402,7 @@ class AsyncRuns(AsyncAPIResource):
             model=model,
             mode="wait",
             metadata=metadata,
+            attachments=attachments,
             idempotency_key=idempotency_key,
             options=options,
         )

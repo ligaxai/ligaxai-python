@@ -30,7 +30,7 @@ import sys
 import time
 import uuid
 from datetime import UTC, datetime
-from typing import Any, TypeVar
+from typing import Any, TypeAlias, TypeVar
 
 import anyio
 import httpx2
@@ -62,6 +62,7 @@ __all__ = [
     "DEFAULT_TIMEOUT",
     "AsyncBaseClient",
     "BaseClient",
+    "MultipartFiles",
     "SyncBaseClient",
 ]
 
@@ -77,6 +78,11 @@ IDEMPOTENT_METHODS = frozenset({"POST"})
 USER_AGENT_TEMPLATE = "ligaxai-python/{version} (python/{py}; {os}/{arch})"
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
+
+#: Multipart parts as ``{field: (filename, content, content_type)}``. ``content`` is bytes,
+#: never a stream: the request is rebuilt on every retry, and a stream would be empty the
+#: second time.
+MultipartFiles: TypeAlias = dict[str, tuple[str, bytes, str]]
 SyncPageT = TypeVar("SyncPageT", bound="SyncPage[Any]")
 AsyncPageT = TypeVar("AsyncPageT", bound="AsyncPage[Any]")
 
@@ -192,9 +198,13 @@ class SyncBaseClient(BaseClient):
         *,
         cast_to: type[ModelT],
         json: Any = None,
+        files: MultipartFiles | None = None,
+        data: dict[str, str] | None = None,
         options: RequestOptions | None = None,
     ) -> ModelT:
-        response = self._send_with_retries(method, path, json=json, options=options, stream=False)
+        response = self._send_with_retries(
+            method, path, json=json, files=files, data=data, options=options, stream=False
+        )
         return self._parse(response, cast_to)
 
     def request_stream(
@@ -223,6 +233,8 @@ class SyncBaseClient(BaseClient):
         json: Any,
         options: RequestOptions | None,
         stream: bool = False,
+        files: MultipartFiles | None = None,
+        data: dict[str, str] | None = None,
     ) -> httpx2.Response:
         opts = options or RequestOptions()
         max_retries = self.max_retries if opts.max_retries is None else opts.max_retries
@@ -234,6 +246,8 @@ class SyncBaseClient(BaseClient):
                 method,
                 self._build_url(path),
                 json=json,
+                files=files,
+                data=data,
                 params=opts.params or None,
                 headers=headers,
                 timeout=timeout,
@@ -277,10 +291,12 @@ class AsyncBaseClient(BaseClient):
         *,
         cast_to: type[ModelT],
         json: Any = None,
+        files: MultipartFiles | None = None,
+        data: dict[str, str] | None = None,
         options: RequestOptions | None = None,
     ) -> ModelT:
         response = await self._send_with_retries(
-            method, path, json=json, options=options, stream=False
+            method, path, json=json, files=files, data=data, options=options, stream=False
         )
         return self._parse(response, cast_to)
 
@@ -314,6 +330,8 @@ class AsyncBaseClient(BaseClient):
         json: Any,
         options: RequestOptions | None,
         stream: bool = False,
+        files: MultipartFiles | None = None,
+        data: dict[str, str] | None = None,
     ) -> httpx2.Response:
         opts = options or RequestOptions()
         max_retries = self.max_retries if opts.max_retries is None else opts.max_retries
@@ -325,6 +343,8 @@ class AsyncBaseClient(BaseClient):
                 method,
                 self._build_url(path),
                 json=json,
+                files=files,
+                data=data,
                 params=opts.params or None,
                 headers=headers,
                 timeout=timeout,

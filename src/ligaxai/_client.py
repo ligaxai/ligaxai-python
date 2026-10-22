@@ -20,6 +20,7 @@ from .resources.client_tokens import AsyncClientTokens, ClientTokens
 from .resources.connect_sessions import AsyncConnectSessions, ConnectSessions
 from .resources.conversations import AsyncConversations, Conversations
 from .resources.end_users import AsyncEndUsers, EndUsers
+from .resources.files import AsyncFiles, Files
 from .resources.keys import AsyncKeys, Keys
 from .resources.profiles import AsyncProfiles, Profiles
 from .resources.runs import AsyncRuns, Runs
@@ -97,6 +98,7 @@ class LigaX(SyncBaseClient):
     conversations: Conversations
     profiles: Profiles
     keys: Keys
+    files: Files
     usage: Usage
     webhooks: Webhooks
     client_tokens: ClientTokens
@@ -133,6 +135,7 @@ class LigaX(SyncBaseClient):
         self.conversations = Conversations(self)
         self.profiles = Profiles(self)
         self.keys = Keys(self)
+        self.files = Files(self)
         self.usage = Usage(self)
         self.webhooks = Webhooks(self)
         self.client_tokens = ClientTokens(self)
@@ -176,6 +179,7 @@ class AsyncLigaX(AsyncBaseClient):
     conversations: AsyncConversations
     profiles: AsyncProfiles
     keys: AsyncKeys
+    files: AsyncFiles
     usage: AsyncUsage
     webhooks: AsyncWebhooks
     client_tokens: AsyncClientTokens
@@ -211,6 +215,7 @@ class AsyncLigaX(AsyncBaseClient):
         self.conversations = AsyncConversations(self)
         self.profiles = AsyncProfiles(self)
         self.keys = AsyncKeys(self)
+        self.files = AsyncFiles(self)
         self.usage = AsyncUsage(self)
         self.webhooks = AsyncWebhooks(self)
         self.client_tokens = AsyncClientTokens(self)

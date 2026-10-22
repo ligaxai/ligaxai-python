@@ -20,6 +20,8 @@ from ._generated.models import (
     EndUserConnection,
     EndUserConnectionDeleted,
     EndUserConnectionList,
+    FileDeleted,
+    FileObject,
     Profile,
     ProfileConnector,
     ProfileList,
@@ -54,12 +56,14 @@ from ._webhooks import (
     WebhookEvent,
 )
 from .resources.connect_sessions import CONNECT_SESSION_TERMINAL_STATUSES, ConnectSessionStatus
+from .resources.files import MAX_FILE_BYTES, FileInput
 from .resources.runs import TERMINAL_STATUSES, EndUserParam, InputParam, InterruptDecision
 from .resources.usage import UsageGroupBy
 from .resources.webhooks import WebhookEndpointStatus, WebhookEventType
 
 __all__ = [
     "CONNECT_SESSION_TERMINAL_STATUSES",
+    "MAX_FILE_BYTES",
     "TERMINAL_STATUSES",
     "ApiKey",
     "ApiKeyLimit",
@@ -77,6 +81,9 @@ __all__ = [
     "EndUserConnectionDeleted",
     "EndUserConnectionList",
     "EndUserParam",
+    "FileDeleted",
+    "FileInput",
+    "FileObject",
     "InputParam",
     "InterruptDecision",
     "Profile",

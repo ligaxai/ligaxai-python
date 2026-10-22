@@ -439,7 +439,7 @@ def test_sync_and_async_surfaces_match() -> None:
 
     sync = LigaX(api_key="k")
     asyn = AsyncLigaX(api_key="k")
-    for name in ("runs", "conversations", "profiles", "keys", "usage"):
+    for name in ("runs", "conversations", "profiles", "keys", "usage", "files", "webhooks"):
         s_res, a_res = getattr(sync, name), getattr(asyn, name)
         s_methods = {m for m in dir(s_res) if not m.startswith("_")}
         a_methods = {m for m in dir(a_res) if not m.startswith("_")}

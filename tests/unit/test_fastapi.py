@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import base64
 import json
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
 
 import httpx2
 from fastapi import Depends, FastAPI, Request
+from standardwebhooks import Webhook
 
 from ligaxai import AsyncLigaX, RunEvent, ServerSentEvent, TextAssembler
 from ligaxai._streaming import SSEDecoder
@@ -14,7 +17,9 @@ from ligaxai.fastapi import (
     encode_sse,
     run_stream_route,
     stream_proxy,
+    webhook_dependency,
 )
+from ligaxai.types import WebhookEvent, WebhookTestEvent
 from tests.conftest import (
     CONVERSATION_ID,
     PROFILE_ID,
@@ -194,3 +199,68 @@ async def test_run_stream_route_relays_a_json_replay(recorder: Recorder) -> None
     parsed = RunEvent.from_sse(event)
     assert parsed is not None and parsed.type == "run.end"
     assert parsed.payload == {"status": "completed", "text": "Hello there."}
+
+
+# -- webhook_dependency ---------------------------------------------------------------
+
+
+def _webhook_app(secret: str) -> tuple[FastAPI, list[tuple[str, WebhookEvent]]]:
+    from fastapi import Header
+
+    seen: list[tuple[str, WebhookEvent]] = []
+    app = FastAPI()
+    verified = webhook_dependency(lambda: secret)
+
+    @app.post("/hooks", status_code=204)
+    async def hook(
+        event: WebhookEvent = Depends(verified),  # noqa: B008
+        webhook_id: str = Header(),
+    ) -> None:
+        seen.append((webhook_id, event))
+
+    return app, seen
+
+
+async def test_webhook_dependency_verifies_the_raw_body() -> None:
+    secret = "whsec_" + base64.b64encode(b"k" * 32).decode()
+    app, seen = _webhook_app(secret)
+    # Deliberately non-canonical JSON: re-serialising it would break the signature.
+    raw = (
+        b'{"type":"webhook.test",  "timestamp":"2026-10-22T08:00:00.000Z",'
+        b'"data":{"object":"webhook_endpoint","id":"we_1"}}'
+    )
+    now = datetime.now(UTC)
+    headers = {
+        "webhook-id": "msg_1",
+        "webhook-timestamp": str(int(now.timestamp())),
+        "webhook-signature": Webhook(secret).sign("msg_1", now, raw.decode()),
+        "content-type": "application/json",
+    }
+    transport = httpx2.ASGITransport(app=app)
+    async with httpx2.AsyncClient(transport=transport, base_url="http://app") as http:
+        ok = await http.post("/hooks", content=raw, headers=headers)
+        forged = await http.post("/hooks", content=raw + b" ", headers=headers)
+        unsigned = await http.post("/hooks", content=raw)
+    assert ok.status_code == 204
+    assert forged.status_code == 400 and unsigned.status_code == 400
+    assert "webhook-signature" in unsigned.json()["detail"]
+    assert len(seen) == 1
+    webhook_id, event = seen[0]
+    assert webhook_id == "msg_1" and isinstance(event, WebhookTestEvent)
+
+
+async def test_webhook_dependency_rejects_a_signed_non_event() -> None:
+    secret = "whsec_" + base64.b64encode(b"k" * 32).decode()
+    app, seen = _webhook_app(secret)
+    raw = b'{"hello": "world"}'
+    now = datetime.now(UTC)
+    headers = {
+        "webhook-id": "msg_2",
+        "webhook-timestamp": str(int(now.timestamp())),
+        "webhook-signature": Webhook(secret).sign("msg_2", now, raw.decode()),
+    }
+    transport = httpx2.ASGITransport(app=app)
+    async with httpx2.AsyncClient(transport=transport, base_url="http://app") as http:
+        res = await http.post("/hooks", content=raw, headers=headers)
+    assert res.status_code == 400 and res.json()["detail"] == "Webhook body is not an event."
+    assert seen == []

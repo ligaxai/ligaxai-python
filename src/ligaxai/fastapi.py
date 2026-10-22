@@ -8,6 +8,8 @@
   stays on the server; the browser chooses only the input and which of its own
   conversations to continue.
 * ``stream_proxy()`` re-encodes any SDK stream as ``text/event-stream``.
+* ``webhook_dependency()`` verifies a webhook delivery against the request's raw body and
+  hands the route a typed event, or answers ``400``.
 """
 
 from __future__ import annotations
@@ -20,16 +22,17 @@ from typing import Any, TypeAlias
 from pydantic import Field
 
 try:
-    from fastapi import Request
+    from fastapi import HTTPException, Request
     from fastapi.responses import JSONResponse, Response, StreamingResponse
 except ImportError:  # pragma: no cover - exercised only without the extra
     raise ImportError("ligaxai.fastapi requires fastapi; install ligaxai[fastapi]") from None
 
 from ._client import AsyncLigaX
-from ._exceptions import APIStatusError
+from ._exceptions import APIStatusError, WebhookVerificationError
 from ._models import BaseModel
 from ._run_stream import AsyncRunStream, RunEvent
 from ._streaming import ServerSentEvent
+from ._webhooks import WebhookEvent, parse_event, verify_signature
 from .resources.runs import EndUserParam
 
 __all__ = [
@@ -40,6 +43,7 @@ __all__ = [
     "encode_sse",
     "run_stream_route",
     "stream_proxy",
+    "webhook_dependency",
 ]
 
 _SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
@@ -208,3 +212,44 @@ async def _relay(stream: AsyncRunStream) -> AsyncIterator[bytes]:
             )
     finally:
         await stream.close()
+
+
+def webhook_dependency(
+    secret: str | Callable[[], str],
+) -> Callable[[Request], Awaitable[WebhookEvent]]:
+    """Return a FastAPI dependency that verifies a webhook and yields its typed event.
+
+    Usage::
+
+        verified = webhook_dependency(lambda: settings.ligax_webhook_secret)
+
+        @app.post("/hooks/ligax", status_code=204)
+        async def hook(
+            background: BackgroundTasks,
+            event: WebhookEvent = Depends(verified),
+            webhook_id: str = Header(),
+        ) -> None:
+            background.add_task(handle, webhook_id, event)   # answer fast, work later
+
+    It reads the **raw** body (``await request.body()``), never a parsed model, because the
+    signature covers the exact bytes. A bad or missing signature, a stale timestamp, or a
+    body that is not an event answers ``400`` before the route runs. ``secret`` may be a
+    callable so it is read per request (rotation, settings loaded after import).
+    """
+
+    async def _dependency(request: Request) -> WebhookEvent:
+        key = secret() if callable(secret) else secret
+        body = await request.body()
+        try:
+            # An invalid `secret` is a configuration error: its ValueError propagates (500).
+            verify_signature(body, request.headers, key)
+        except WebhookVerificationError as exc:
+            raise HTTPException(status_code=400, detail=exc.message) from exc
+        try:
+            return parse_event(body)
+        except ValueError as exc:
+            # Signed but not an event this SDK can parse: 4xx so the server retries it
+            # later rather than the receiver dropping it.
+            raise HTTPException(status_code=400, detail="Webhook body is not an event.") from exc
+
+    return _dependency

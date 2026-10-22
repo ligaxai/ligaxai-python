@@ -25,7 +25,7 @@ profile for it, and set the key once:
 ```bash
 export LIGAX_API_KEY="lgx_sk_..."
 # Optional — the development platform instead of production:
-export LIGAX_BASE_URL="https://ligax-ai-dev-2p3fwh332a-uc.a.run.app/api/public/v1"
+export LIGAX_BASE_URL="https://<dev-host>/api/public/v1"
 ```
 
 Run an agent and wait for the answer:
@@ -614,6 +614,6 @@ Apache-2.0 — see [LICENSE](LICENSE).
 | stable | tag `vX.Y.Z` on `main` | `0.1.0` | `pip install ligaxai` |
 
 `pip install ligaxai` never selects a `.dev` build. Point a dev install at the development
-platform with `LIGAX_BASE_URL=https://ligax-ai-dev-2p3fwh332a-uc.a.run.app/api/public/v1`;
+platform with `LIGAX_BASE_URL=https://<dev-host>/api/public/v1`;
 the built-in default is the production host. After a stable tag, bump
 `src/ligaxai/_version.py` on `dev` so the next dev build sorts above the release.

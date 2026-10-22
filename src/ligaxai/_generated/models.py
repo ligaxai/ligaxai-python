@@ -10,6 +10,15 @@ from ligaxai._models import BaseModel
 from pydantic import ConfigDict, Field, RootModel
 
 
+class EndUserConnection(BaseModel):
+    object: Literal["connection"]
+    id: str
+    connector_key: str
+    display_name: str
+    status: str
+    status_code: str | None
+
+
 class RunEvent(BaseModel):
     seq: int
     type: str
@@ -29,6 +38,8 @@ class WebhookEndpoint(BaseModel):
             "run.canceled",
             "run.requires_action",
             "api_key.limit_reached",
+            "connection.created",
+            "connection.deleted",
         ]
     ]
     profile_ids: list[str]
@@ -107,6 +118,8 @@ class WebhookEndpointCreateRequest(BaseModel):
             "run.canceled",
             "run.requires_action",
             "api_key.limit_reached",
+            "connection.created",
+            "connection.deleted",
         ]
     ] = Field(..., min_length=1)
     profile_ids: list[ProfileId] | None = Field(None, max_length=50)
@@ -124,6 +137,8 @@ class WebhookEndpointWithSecret(BaseModel):
             "run.canceled",
             "run.requires_action",
             "api_key.limit_reached",
+            "connection.created",
+            "connection.deleted",
         ]
     ]
     profile_ids: list[str]
@@ -151,6 +166,8 @@ class WebhookEndpointUpdateRequest(BaseModel):
                 "run.canceled",
                 "run.requires_action",
                 "api_key.limit_reached",
+                "connection.created",
+                "connection.deleted",
             ]
         ]
         | None
@@ -224,6 +241,42 @@ class WidgetSession(BaseModel):
         ...,
         description="Keep it in the browser and send it next time to continue as the same visitor.",
     )
+
+
+class ConnectSessionCreateRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    connector_key: str = Field(..., pattern="^[a-z0-9][a-z0-9_-]{0,63}$")
+    profile_id: str | None = Field(None, pattern="^prf_[0-9A-Za-z]{20}$")
+    end_user: EndUser | None = None
+
+
+class ConnectSession(BaseModel):
+    object: Literal["connect_session"]
+    id: str
+    status: Literal["pending", "succeeded", "denied", "failed", "expired"]
+    connect_url: str | None = Field(
+        ...,
+        description="Open in a popup; the provider's consent page. Present while pending.",
+    )
+    expires_at: str | None
+    connector_key: str
+    end_user_id: str
+    connection_id: str | None
+    failure_code: str | None
+
+
+class EndUserConnectionList(BaseModel):
+    object: Literal["list"]
+    data: list[EndUserConnection]
+    has_more: bool
+
+
+class EndUserConnectionDeleted(BaseModel):
+    object: Literal["connection"]
+    id: str
+    deleted: Literal[True]
 
 
 class RequiredAction(BaseModel):

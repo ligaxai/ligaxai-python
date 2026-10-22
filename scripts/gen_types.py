@@ -71,6 +71,11 @@ SCHEMA_NAMES: dict[tuple[str, str], str] = {
     ("webhooks.test", "200"): "WebhookDelivery",
     ("clientTokens.create", "request"): "ClientTokenCreateRequest",
     ("clientTokens.create", "201"): "ClientToken",
+    ("connectSessions.create", "request"): "ConnectSessionCreateRequest",
+    ("connectSessions.create", "201"): "ConnectSession",
+    ("connectSessions.get", "200"): "ConnectSession",
+    ("endUsers.connections.list", "200"): "EndUserConnectionList",
+    ("endUsers.connections.delete", "200"): "EndUserConnectionDeleted",
     # Publishable-key, browser-only: generated so the spec stays whole, never mounted on a
     # client (a Python process is not a browser).
     ("widget.sessions.create", "request"): "WidgetSessionCreateRequest",

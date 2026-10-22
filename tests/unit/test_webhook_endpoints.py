@@ -258,3 +258,79 @@ async def test_test_on_a_disabled_endpoint_is_a_conflict(
         await call(factory(recorder), "test", WEBHOOK_ID)
     assert info.value.code == "webhook_endpoint_disabled"
     assert len(recorder.requests) == 1
+
+
+# -- webhooks.create is idempotent ----------------------------------------------------
+
+ENDPOINT_WITH_SECRET = {**endpoint_body(), "secret": TEST_SECRET}
+
+
+async def test_webhooks_create_replay_parses_the_same_endpoint(
+    recorder: Recorder, factory: ClientFactory
+) -> None:
+    recorder.responses = [
+        json_response(201, ENDPOINT_WITH_SECRET),
+        json_response(200, ENDPOINT_WITH_SECRET, {"Idempotent-Replayed": "true"}),
+    ]
+    client = factory(recorder)
+    first = await call(
+        client,
+        "create",
+        url="https://hooks.example.com/ligax",
+        event_types=["run.completed"],
+        idempotency_key="zap-subscribe-123",
+    )
+    replay = await call(
+        client,
+        "create",
+        url="https://hooks.example.com/ligax",
+        event_types=["run.completed"],
+        idempotency_key="zap-subscribe-123",
+    )
+    assert [r.headers["idempotency-key"] for r in recorder.requests] == ["zap-subscribe-123"] * 2
+    assert isinstance(replay, WebhookEndpointWithSecret)
+    assert (replay.id, replay.secret) == (first.id, first.secret)
+
+
+async def test_webhooks_create_concurrent_duplicate_409_is_retried_with_same_key(
+    recorder: Recorder, factory: ClientFactory, no_sleep: list[float]
+) -> None:
+    recorder.responses = [
+        json_response(
+            409,
+            error_body("A request with this key is in progress.", type_="conflict_error"),
+            {"x-should-retry": "true", "Retry-After": "1"},
+        ),
+        json_response(200, ENDPOINT_WITH_SECRET, {"Idempotent-Replayed": "true"}),
+    ]
+    created = await call(
+        factory(recorder),
+        "create",
+        url="https://hooks.example.com/ligax",
+        event_types=["run.completed"],
+    )
+    keys = {r.headers["idempotency-key"] for r in recorder.requests}
+    assert len(recorder.requests) == 2 and len(keys) == 1
+    assert next(iter(keys)).startswith("sdk-")
+    assert no_sleep == [1.0]
+    assert created.secret == TEST_SECRET
+
+
+async def test_webhooks_create_409_without_retry_hint_after_retries_raises(
+    recorder: Recorder, factory: ClientFactory, no_sleep: list[float]
+) -> None:
+    recorder.responses = [
+        json_response(
+            409,
+            error_body("Key reused with a different body.", type_="conflict_error"),
+            {"x-should-retry": "false"},
+        )
+    ]
+    with pytest.raises(ConflictError):
+        await call(
+            factory(recorder),
+            "create",
+            url="https://hooks.example.com/ligax",
+            event_types=["run.completed"],
+        )
+    assert len(recorder.requests) == 1

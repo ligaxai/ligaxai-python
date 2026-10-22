@@ -5,6 +5,7 @@ from .keys import AsyncKeys, Keys
 from .profiles import AsyncProfiles, Profiles
 from .runs import AsyncRuns, EndUserParam, InputParam, InterruptDecision, Runs
 from .usage import AsyncUsage, Usage, UsageGroupBy
+from .webhooks import AsyncWebhooks, WebhookEndpointStatus, WebhookEventType, Webhooks
 
 __all__ = [
     "AsyncConversations",
@@ -12,6 +13,7 @@ __all__ = [
     "AsyncProfiles",
     "AsyncRuns",
     "AsyncUsage",
+    "AsyncWebhooks",
     "Conversations",
     "EndUserParam",
     "InputParam",
@@ -21,4 +23,7 @@ __all__ = [
     "Runs",
     "Usage",
     "UsageGroupBy",
+    "WebhookEndpointStatus",
+    "WebhookEventType",
+    "Webhooks",
 ]

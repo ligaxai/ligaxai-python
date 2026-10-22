@@ -21,6 +21,7 @@ from .resources.keys import AsyncKeys, Keys
 from .resources.profiles import AsyncProfiles, Profiles
 from .resources.runs import AsyncRuns, Runs
 from .resources.usage import AsyncUsage, Usage
+from .resources.webhooks import AsyncWebhooks, Webhooks
 
 if TYPE_CHECKING:
     from typing import Self
@@ -90,6 +91,7 @@ class LigaX(SyncBaseClient):
     profiles: Profiles
     keys: Keys
     usage: Usage
+    webhooks: Webhooks
 
     def __init__(
         self,
@@ -122,6 +124,7 @@ class LigaX(SyncBaseClient):
         self.profiles = Profiles(self)
         self.keys = Keys(self)
         self.usage = Usage(self)
+        self.webhooks = Webhooks(self)
 
     def with_options(
         self,
@@ -161,6 +164,7 @@ class AsyncLigaX(AsyncBaseClient):
     profiles: AsyncProfiles
     keys: AsyncKeys
     usage: AsyncUsage
+    webhooks: AsyncWebhooks
 
     def __init__(
         self,
@@ -192,6 +196,7 @@ class AsyncLigaX(AsyncBaseClient):
         self.profiles = AsyncProfiles(self)
         self.keys = AsyncKeys(self)
         self.usage = AsyncUsage(self)
+        self.webhooks = AsyncWebhooks(self)
 
     def with_options(
         self,

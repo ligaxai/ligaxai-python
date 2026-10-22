@@ -17,7 +17,9 @@ from ._base_client import DEFAULT_MAX_RETRIES, AsyncBaseClient, SyncBaseClient
 from ._exceptions import APIError
 from ._types import NOT_GIVEN, NotGiven, NotGivenOr
 from .resources.client_tokens import AsyncClientTokens, ClientTokens
+from .resources.connect_sessions import AsyncConnectSessions, ConnectSessions
 from .resources.conversations import AsyncConversations, Conversations
+from .resources.end_users import AsyncEndUsers, EndUsers
 from .resources.keys import AsyncKeys, Keys
 from .resources.profiles import AsyncProfiles, Profiles
 from .resources.runs import AsyncRuns, Runs
@@ -80,9 +82,9 @@ class LigaX(SyncBaseClient):
     Args:
         api_key: Organisation secret key (``lgx_sk_…``). Falls back to ``LIGAX_API_KEY``.
             A client token (``lgx_ct_…``) from ``client_tokens.create`` also works, for
-            runs and conversations of its one profile and end user only — useful to act as
-            the browser in a test or tool. It expires in minutes and cannot be refreshed
-            by this client; mint a new one.
+            runs, conversations and connect sessions of its one profile and end user
+            only — useful to act as the browser in a test or tool. It expires in minutes
+            and cannot be refreshed by this client; mint a new one.
         base_url: API root. Falls back to ``LIGAX_BASE_URL`` then the built-in default.
         timeout: ``httpx2.Timeout`` or seconds. Default ``Timeout(600, connect=5)``.
         max_retries: Attempts after the first. Default 2.
@@ -98,6 +100,8 @@ class LigaX(SyncBaseClient):
     usage: Usage
     webhooks: Webhooks
     client_tokens: ClientTokens
+    connect_sessions: ConnectSessions
+    end_users: EndUsers
 
     def __init__(
         self,
@@ -132,6 +136,8 @@ class LigaX(SyncBaseClient):
         self.usage = Usage(self)
         self.webhooks = Webhooks(self)
         self.client_tokens = ClientTokens(self)
+        self.connect_sessions = ConnectSessions(self)
+        self.end_users = EndUsers(self)
 
     def with_options(
         self,
@@ -173,6 +179,8 @@ class AsyncLigaX(AsyncBaseClient):
     usage: AsyncUsage
     webhooks: AsyncWebhooks
     client_tokens: AsyncClientTokens
+    connect_sessions: AsyncConnectSessions
+    end_users: AsyncEndUsers
 
     def __init__(
         self,
@@ -206,6 +214,8 @@ class AsyncLigaX(AsyncBaseClient):
         self.usage = AsyncUsage(self)
         self.webhooks = AsyncWebhooks(self)
         self.client_tokens = AsyncClientTokens(self)
+        self.connect_sessions = AsyncConnectSessions(self)
+        self.end_users = AsyncEndUsers(self)
 
     def with_options(
         self,

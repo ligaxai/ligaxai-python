@@ -32,6 +32,8 @@ WebhookEventType: TypeAlias = Literal[
     "run.canceled",
     "run.requires_action",
     "api_key.limit_reached",
+    "connection.created",
+    "connection.deleted",
 ]
 WebhookEndpointStatus: TypeAlias = Literal["active", "disabled"]
 

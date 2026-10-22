@@ -14,7 +14,11 @@ from ._generated.models import (
     ApiKeyLimitWebhookEvent,
     ApiKeyLimitWebhookEventData,
     ClientToken,
+    ConnectSession,
     Conversation,
+    EndUserConnection,
+    EndUserConnectionDeleted,
+    EndUserConnectionList,
     Profile,
     ProfileConnector,
     ProfileList,
@@ -41,18 +45,25 @@ from ._generated.models import (
 )
 from ._run_stream import RunEvent, RunEventList
 from ._webhooks import UnknownWebhookEvent, WebhookEvent
+from .resources.connect_sessions import CONNECT_SESSION_TERMINAL_STATUSES, ConnectSessionStatus
 from .resources.runs import TERMINAL_STATUSES, EndUserParam, InputParam, InterruptDecision
 from .resources.usage import UsageGroupBy
 from .resources.webhooks import WebhookEndpointStatus, WebhookEventType
 
 __all__ = [
+    "CONNECT_SESSION_TERMINAL_STATUSES",
     "TERMINAL_STATUSES",
     "ApiKey",
     "ApiKeyLimit",
     "ApiKeyLimitWebhookEvent",
     "ApiKeyLimitWebhookEventData",
     "ClientToken",
+    "ConnectSession",
+    "ConnectSessionStatus",
     "Conversation",
+    "EndUserConnection",
+    "EndUserConnectionDeleted",
+    "EndUserConnectionList",
     "EndUserParam",
     "InputParam",
     "InterruptDecision",

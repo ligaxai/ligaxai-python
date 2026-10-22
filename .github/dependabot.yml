@@ -1,0 +1,8 @@
+# Workflow actions are pinned to commit SHAs (a release job holds publish rights through OIDC, so a
+# moved tag must not change what runs). Dependabot proposes the SHA bumps.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -1,14 +1,18 @@
 """Response and parameter types, for annotations: ``from ligaxai.types import Run``.
 
-The response models are generated from the pinned OpenAPI spec (``_generated/``); the run
-event types are hand-written because the spec describes the event stream only as
-``text/event-stream``. Every model inherits ``ligaxai.BaseModel``: unknown fields
-are kept rather than rejected, and ``.request_id`` carries the server's ``X-Request-Id``.
+The response models are generated from the pinned OpenAPI spec (``_generated/``), as are
+the webhook events in its ``webhooks`` section. The run stream's event types are
+hand-written because the spec describes that stream only as ``text/event-stream``, and so
+is ``UnknownWebhookEvent`` (the fallback for a webhook type added later). Every model
+inherits ``ligaxai.BaseModel``: unknown fields are kept rather than rejected, and
+``.request_id`` carries the server's ``X-Request-Id``.
 """
 
 from ._generated.models import (
     ApiKey,
     ApiKeyLimit,
+    ApiKeyLimitWebhookEvent,
+    ApiKeyLimitWebhookEventData,
     Conversation,
     Profile,
     ProfileConnector,
@@ -22,6 +26,8 @@ from ._generated.models import (
     RunSource,
     RunToolCall,
     RunUsage,
+    RunWebhookEvent,
+    RunWebhookEventData,
     UsageBucket,
     UsageReport,
     WebhookDelivery,
@@ -29,8 +35,11 @@ from ._generated.models import (
     WebhookEndpointDeleted,
     WebhookEndpointList,
     WebhookEndpointWithSecret,
+    WebhookTestEvent,
+    WebhookTestEventData,
 )
 from ._run_stream import RunEvent, RunEventList
+from ._webhooks import UnknownWebhookEvent, WebhookEvent
 from .resources.runs import TERMINAL_STATUSES, EndUserParam, InputParam, InterruptDecision
 from .resources.usage import UsageGroupBy
 from .resources.webhooks import WebhookEndpointStatus, WebhookEventType
@@ -39,6 +48,8 @@ __all__ = [
     "TERMINAL_STATUSES",
     "ApiKey",
     "ApiKeyLimit",
+    "ApiKeyLimitWebhookEvent",
+    "ApiKeyLimitWebhookEventData",
     "Conversation",
     "EndUserParam",
     "InputParam",
@@ -57,6 +68,9 @@ __all__ = [
     "RunSource",
     "RunToolCall",
     "RunUsage",
+    "RunWebhookEvent",
+    "RunWebhookEventData",
+    "UnknownWebhookEvent",
     "UsageBucket",
     "UsageGroupBy",
     "UsageReport",
@@ -66,5 +80,8 @@ __all__ = [
     "WebhookEndpointList",
     "WebhookEndpointStatus",
     "WebhookEndpointWithSecret",
+    "WebhookEvent",
     "WebhookEventType",
+    "WebhookTestEvent",
+    "WebhookTestEventData",
 ]

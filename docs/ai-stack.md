@@ -33,7 +33,7 @@ reference; other docs defer to it for facts. Layer rules and invariants live in 
 | `mypy --strict`           | with the pydantic plugin; packages = `ligaxai`                            |
 | `pyright` strict          | second checker; `--verifytypes ligaxai --ignoreexternal` must be ≥ 95 %  |
 | `pytest` + `pytest-asyncio` (`asyncio_mode=auto`) + `pytest-cov` | tests; coverage `fail_under = 85`; `filterwarnings = error` |
-| `datamodel-code-generator` | `scripts/gen_types.py` → `_generated/models.py`                                      |
+| `datamodel-code-generator` | `scripts/gen_types.py` (normalise spec → codegen → ruff format) → `_generated/models.py`; `--check` = drift gate |
 | `pre-commit`              | hooks for ruff, uv-lock, mypy, pyright                                               |
 
 ## Commands
@@ -47,11 +47,11 @@ See `Makefile` (`make help`). The gate is `make check && make test`.
 | `LIGAX_API_KEY`  | bearer token (required unless `api_key=`)       |
 | `LIGAX_BASE_URL` | overrides `_client.DEFAULT_BASE_URL`            |
 | `LIGAX_LOG`      | `debug\|info\|warn\|error\|off` package logging |
-| `SPEC_VERSION` (file)   | pinned spec release tag; `unset` until published |
+| `SPEC_VERSION` (file)   | pinned spec tag: `public-api-spec-v0.1.0` (`openapi/openapi.json`) |
 
 ## CI / release
 
-- `.github/workflows/ci.yml`: `uv sync --locked`, `make check`, `pytest --cov`,
+- `.github/workflows/ci.yml`: `uv sync --locked`, lint, mypy + pyright, `gen_types.py --check`, `pytest --cov`,
   `uv build --no-sources`, `pyright --verifytypes`; plus a `uv lock --check` job.
 - `.github/workflows/release.yml`: on tag `v*`, verifies the tag equals `__version__`, builds,
   publishes with `pypa/gh-action-pypi-publish@release/v1` under environment `pypi`,

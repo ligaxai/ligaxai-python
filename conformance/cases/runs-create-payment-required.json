@@ -1,0 +1,37 @@
+{
+  "name": "runs.create over the key's spend limit raises PaymentRequiredError and is not retried",
+  "max_retries": 2,
+  "args": {
+    "profile_id": "prf_AAAAAAAAAAAAAAAAAAAA",
+    "input": "Hello"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/runs"
+  },
+  "response": {
+    "status": 402,
+    "headers": {
+      "x-request-id": "req_402",
+      "x-limit-resets-at": "2026-11-01T00:00:00.000Z"
+    },
+    "body": {
+      "error": {
+        "type": "billing_error",
+        "code": "key_limit_reached",
+        "message": "This API key has reached its spend limit.",
+        "request_id": "req_402"
+      }
+    }
+  },
+  "expect": {
+    "call": "runs.create",
+    "error": {
+      "type": "PaymentRequiredError",
+      "status_code": 402,
+      "code": "key_limit_reached",
+      "request_id": "req_402"
+    },
+    "requests": 1
+  }
+}

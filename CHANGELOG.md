@@ -8,6 +8,49 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Agent API v0.1** (`SPEC_VERSION` = `public-api-spec-v0.1.0`), identical on `LigaX` and
+  `AsyncLigaX`: `runs.create` / `wait` / `stream` / `get` / `events` / `follow_events` /
+  `cancel` / `resolve_interrupt`, `conversations.get`, `profiles.list` / `get`,
+  `keys.self`, `usage.get`. Response models are generated from the pinned spec and
+  re-exported in `ligaxai.types`.
+- `RunStream` / `AsyncRunStream` over the engine's LAE frames: `RunEvent(type, seq,
+  payload, run_id)`, `run_id` / `conversation_id` from `X-Run-Id` / `X-Conversation-Id`,
+  `last_seq` for resuming with `follow_events(after=)`, `text_stream()`, `final_text()`,
+  context-manager use; a JSON answer (idempotent replay) falls back to `stream.run`.
+- `TextAssembler`: offset-addressed text assembly in UTF-16 code units — replay-safe,
+  emits only new contiguous text, never splits a surrogate pair, answer in `part.start`
+  order.
+- `ligaxai.fastapi.run_stream_route()`: a server-side endpoint that streams a run to the
+  browser without exposing the key; `encode_run_event()`.
+- `gen_types.py --check` (in `make check` and CI): the generated models cannot drift from
+  `openapi/openapi.json`.
+- Conformance cases for `runs.create`, `runs.get` and a non-retried `402`; the harness
+  can assert a request count (`expect.requests`).
+- **Webhook endpoints** (scope `webhooks:manage`) on both clients:
+  `webhooks.create(url=, event_types=, description=, profile_ids=)` (returns the signing
+  `secret` once), `list`, `get`, `update` (only the fields given are sent), `delete`,
+  `test` (→ `WebhookDelivery`).
+- Typed webhook events, generated from the spec's top-level `webhooks` section:
+  `RunWebhookEvent` (`run.completed` / `failed` / `canceled` / `requires_action`),
+  `ApiKeyLimitWebhookEvent`, `WebhookTestEvent`; `UnknownWebhookEvent` for a type added
+  later. `webhooks.verify_signature()` and `webhooks.parse_event()`.
+- `ligaxai.fastapi.webhook_dependency(secret)`: verifies a request's raw body and yields the
+  typed event, or answers `400`.
+
+### Changed
+
+- `webhooks.verify()` returns a typed event (dispatched on `type`) instead of the parsed
+  JSON, and reports a malformed signature header as `WebhookVerificationError`.
+- 422 is never retried (with 402 and 403), matching the TypeScript SDK.
+- `examples/fastapi-app` is a working sample: `/me`, `/ask` (`runs.wait`), `/chat`
+  (`run_stream_route`) and a one-file streaming chat page.
+
+### Removed
+
+- The template's example `health` resource (the Agent API has no `/health`).
+
+### Template baseline
+
 - Template skeleton: `LigaX` / `AsyncLigaX` clients with env-based
   configuration, `with_options()`, context managers and `http_client` injection.
 - Request pipeline: bearer auth, `User-Agent`, `X-Request-Id` capture, auto

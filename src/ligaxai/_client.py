@@ -16,7 +16,12 @@ import httpx2
 from ._base_client import DEFAULT_MAX_RETRIES, AsyncBaseClient, SyncBaseClient
 from ._exceptions import APIError
 from ._types import NOT_GIVEN, NotGiven, NotGivenOr
-from .resources.health import AsyncHealth, Health
+from .resources.conversations import AsyncConversations, Conversations
+from .resources.keys import AsyncKeys, Keys
+from .resources.profiles import AsyncProfiles, Profiles
+from .resources.runs import AsyncRuns, Runs
+from .resources.usage import AsyncUsage, Usage
+from .resources.webhooks import AsyncWebhooks, Webhooks
 
 if TYPE_CHECKING:
     from typing import Self
@@ -72,7 +77,7 @@ class LigaX(SyncBaseClient):
     """Synchronous client.
 
     Args:
-        api_key: Bearer token. Falls back to ``LIGAX_API_KEY``.
+        api_key: Organisation API key (``lgx_sk_…``). Falls back to ``LIGAX_API_KEY``.
         base_url: API root. Falls back to ``LIGAX_BASE_URL`` then the built-in default.
         timeout: ``httpx2.Timeout`` or seconds. Default ``Timeout(600, connect=5)``.
         max_retries: Attempts after the first. Default 2.
@@ -81,7 +86,12 @@ class LigaX(SyncBaseClient):
             The SDK will not close a client it did not create.
     """
 
-    health: Health
+    runs: Runs
+    conversations: Conversations
+    profiles: Profiles
+    keys: Keys
+    usage: Usage
+    webhooks: Webhooks
 
     def __init__(
         self,
@@ -109,7 +119,12 @@ class LigaX(SyncBaseClient):
             )
         self._owns_http = http_client is None
         self._http = http_client or httpx2.Client()
-        self.health = Health(self)
+        self.runs = Runs(self)
+        self.conversations = Conversations(self)
+        self.profiles = Profiles(self)
+        self.keys = Keys(self)
+        self.usage = Usage(self)
+        self.webhooks = Webhooks(self)
 
     def with_options(
         self,
@@ -144,7 +159,12 @@ class LigaX(SyncBaseClient):
 class AsyncLigaX(AsyncBaseClient):
     """Asynchronous client. Same arguments as :class:`LigaX`."""
 
-    health: AsyncHealth
+    runs: AsyncRuns
+    conversations: AsyncConversations
+    profiles: AsyncProfiles
+    keys: AsyncKeys
+    usage: AsyncUsage
+    webhooks: AsyncWebhooks
 
     def __init__(
         self,
@@ -171,7 +191,12 @@ class AsyncLigaX(AsyncBaseClient):
             )
         self._owns_http = http_client is None
         self._http = http_client or httpx2.AsyncClient()
-        self.health = AsyncHealth(self)
+        self.runs = AsyncRuns(self)
+        self.conversations = AsyncConversations(self)
+        self.profiles = AsyncProfiles(self)
+        self.keys = AsyncKeys(self)
+        self.usage = AsyncUsage(self)
+        self.webhooks = AsyncWebhooks(self)
 
     def with_options(
         self,

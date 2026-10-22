@@ -1,0 +1,5 @@
+# LF everywhere, on every platform. Without this, a Windows checkout converts to CRLF and the
+# generated-models drift check and the formatters see every file as changed.
+* text=auto eol=lf
+*.png binary
+*.ico binary

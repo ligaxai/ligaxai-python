@@ -119,6 +119,7 @@ async client, `await` it; `runs.stream` / `runs.follow_events` can also be used 
 | `webhooks.update(webhook_id, url=, description=, event_types=, profile_ids=, status=)` | `PATCH /webhooks/{id}` | `WebhookEndpoint` |
 | `webhooks.delete(webhook_id)` | `DELETE /webhooks/{id}` | `WebhookEndpointDeleted` |
 | `webhooks.test(webhook_id)` | `POST /webhooks/{id}/test` | `WebhookDelivery` |
+| `client_tokens.create(profile_id=, end_user=, conversation_id=, expires_in=)` | `POST /client_tokens` | `ClientToken` |
 
 Types live in `ligaxai.types`. Fields are snake_case, exactly as on the wire. Every model
 keeps fields the server adds later (`model.model_extra`) and carries `.request_id`.
@@ -339,6 +340,63 @@ from your session, so one person cannot continue another's conversation. A refus
 limit, rate limit, unknown profile) arrives as a plain HTTP error with the API's status.
 
 See [`examples/fastapi-app`](examples/fastapi-app) for a runnable app with a minimal page.
+
+## Browser access: minting client tokens
+
+To let a page call the API **directly from the browser** (no proxy route per request), your
+server mints a short-lived **client token** for the signed-in user and hands it to the page.
+The browser never sees your secret key: a token (`lgx_ct_…`) runs only the one profile it
+names, only as that one end user, reads only that user's conversations, and cannot touch
+webhooks, usage or other profiles. It expires in minutes (60 to 3600 seconds, default 600)
+and stops at once if its parent key is disabled, revoked or rotated — have the page fetch a
+fresh one when it expires.
+
+Two settings must be in place:
+
+- the minting secret key needs the `client_tokens:write` scope;
+- the profile must list your website's origin (e.g. `https://app.example.com`) under
+  **allowed origins** in Settings → Developers, or the platform refuses the browser's calls.
+
+```python
+token = client.client_tokens.create(
+    profile_id="prf_...",
+    end_user={"id": user.id, "name": user.name},  # or just user.id
+    expires_in=900,                                # optional; server default 600
+)
+token.token        # "lgx_ct_…" — send to that user's browser only; never log it
+token.expires_at
+```
+
+With FastAPI, one line mounts an endpoint the page calls (with its session cookie):
+
+```python
+from fastapi import FastAPI, Request
+from ligaxai.fastapi import client_dependency, client_token_route
+
+app = FastAPI()
+get_client = client_dependency()
+
+def current_user(request: Request) -> tuple[str, str] | None:
+    user = request.state.user          # from YOUR auth — never from the request body
+    return (user.id, user.name) if user else None   # None → 401
+
+app.post("/ligax/token")(client_token_route(get_client, "prf_...", current_user))
+```
+
+It answers `{"token": "lgx_ct_…", "expires_at": "…"}` with `Cache-Control: no-store`; a
+refusal from the API (missing scope, unknown profile) keeps its status and error code.
+
+**Django, Flask or anything else:** the same three steps in a view of your own — require a
+signed-in user (401 otherwise), call `client_tokens.create(profile_id=..., end_user=...)`
+with the id from your session, and return only `token` and `expires_at` with
+`Cache-Control: no-store`. Prefer `POST` so the token is never cached or prefetched, and
+never take the profile or user id from the request.
+
+A client token also works as `api_key` — `LigaX(api_key="lgx_ct_…")` — for runs and
+conversations of its one profile and end user. That is meant for tests and tools that
+want to act as the browser; it expires in minutes and the client cannot refresh it.
+`POST /widget/sessions` (publishable keys) is for the browser widget only and has no
+method here.
 
 ## Runtime support
 

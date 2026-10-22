@@ -180,6 +180,52 @@ class WebhookDelivery(BaseModel):
     created_at: str
 
 
+class ClientTokenCreateRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    profile_id: str = Field(..., pattern="^prf_[0-9A-Za-z]{20}$")
+    end_user: EndUser
+    conversation_id: str | None = Field(None, pattern="^conv_[0-9A-Za-z]{24}$")
+    expires_in: int | None = Field(600, ge=60, le=3600)
+
+
+class ClientToken(BaseModel):
+    object: Literal["client_token"]
+    token: str = Field(
+        ...,
+        description="`lgx_ct_…` — give it to the one browser it is for; never log it.",
+    )
+    expires_at: str
+    profile_id: str
+    end_user_id: str
+    conversation_id: str | None
+
+
+class WidgetSessionCreateRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    profile_id: str = Field(..., pattern="^prf_[0-9A-Za-z]{20}$")
+    visitor_id: str | None = Field(None, pattern="^[0-9A-Za-z_-]{16,64}$")
+
+
+class WidgetSession(BaseModel):
+    object: Literal["client_token"]
+    token: str = Field(
+        ...,
+        description="`lgx_ct_…` — give it to the one browser it is for; never log it.",
+    )
+    expires_at: str
+    profile_id: str
+    end_user_id: str
+    conversation_id: str | None
+    visitor_id: str = Field(
+        ...,
+        description="Keep it in the browser and send it next time to continue as the same visitor.",
+    )
+
+
 class RequiredAction(BaseModel):
     type: Literal["interrupt"]
     interrupt_id: str

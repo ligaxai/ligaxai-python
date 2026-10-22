@@ -69,6 +69,12 @@ SCHEMA_NAMES: dict[tuple[str, str], str] = {
     ("webhooks.update", "200"): "WebhookEndpoint",
     ("webhooks.delete", "200"): "WebhookEndpointDeleted",
     ("webhooks.test", "200"): "WebhookDelivery",
+    ("clientTokens.create", "request"): "ClientTokenCreateRequest",
+    ("clientTokens.create", "201"): "ClientToken",
+    # Publishable-key, browser-only: generated so the spec stays whole, never mounted on a
+    # client (a Python process is not a browser).
+    ("widget.sessions.create", "request"): "WidgetSessionCreateRequest",
+    ("widget.sessions.create", "201"): "WidgetSession",
     # Outgoing events (the spec's top-level `webhooks`, keyed by operationId). The four
     # `run.*` events share one body, so they must agree to share one name.
     ("events.run.completed", "request"): "RunWebhookEvent",
@@ -289,6 +295,12 @@ def generate(out: Path) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         normalised = Path(tmp) / "openapi.json"
         normalised.write_text(json.dumps(normalise(spec), indent=2), encoding="utf-8")
+        # Always generate into the temporary directory, never at `out`: the generator's
+        # builtin formatter (black) reads the line length from the nearest pyproject.toml, so
+        # writing beside the repo's (100) and writing to a temp dir (black's 88) split a
+        # 90-column line differently — and ruff then keeps that split's magic trailing comma.
+        # One location for both modes keeps `make gen-types` and `--check` byte-identical.
+        raw = Path(tmp) / "models.py"
         cmd = [
             sys.executable,
             "-m",
@@ -298,7 +310,7 @@ def generate(out: Path) -> None:
             "--input-file-type",
             "openapi",
             "--output",
-            str(out),
+            str(raw),
             "--output-model-type",
             "pydantic_v2.BaseModel",
             "--base-class",
@@ -316,11 +328,11 @@ def generate(out: Path) -> None:
             "builtin",
             "--disable-timestamp",
         ]
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", check=False)
         if proc.returncode != 0:
             print(proc.stdout, proc.stderr, sep="\n")
             raise SystemExit(f"gen_types: datamodel-codegen failed ({proc.returncode})")
-    body = out.read_text(encoding="utf-8")
+        body = raw.read_text(encoding="utf-8")
     if not body.startswith(HEADER):
         body = HEADER + body
     # Format as if the file sat at its real path, so `--check` (which writes to a temporary
@@ -338,10 +350,14 @@ def generate(out: Path) -> None:
         input=body,
         capture_output=True,
         text=True,
+        # Explicit, because `text=True` alone uses the locale code page — cp1252 on Windows — and
+        # the models carry non-ASCII (`…`) that ruff then cannot decode (exit 2 on windows-latest).
+        encoding="utf-8",
         cwd=ROOT,
         check=True,
     )
-    out.write_text(fmt.stdout, encoding="utf-8")
+    # LF on every platform, matching `.gitattributes`, so a Windows run writes the committed bytes.
+    out.write_text(fmt.stdout, encoding="utf-8", newline="\n")
 
 
 def main() -> int:

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "LigaX Agent API",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Run the agents you configure in LigaX from your own software. Authenticate with an organisation API key from Settings → Developers."
   },
   "servers": [
@@ -20,7 +20,8 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "lgx_sk_…"
+        "bearerFormat": "lgx_sk_… | lgx_ct_… | lgx_pk_…",
+        "description": "A secret key (`lgx_sk_…`) from your server; a client token (`lgx_ct_…`) from a browser, for runs and conversations only; a publishable key (`lgx_pk_…`) for /widget/sessions only."
       }
     },
     "schemas": {
@@ -6723,6 +6724,750 @@
             }
           },
           "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/client_tokens": {
+      "post": {
+        "operationId": "clientTokens.create",
+        "summary": "Mint a short-lived token a browser may use to run one profile as one end user (secret key, scope client_tokens:write)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "profile_id": {
+                    "type": "string",
+                    "pattern": "^prf_[0-9A-Za-z]{20}$"
+                  },
+                  "end_user": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ]
+                  },
+                  "conversation_id": {
+                    "type": "string",
+                    "pattern": "^conv_[0-9A-Za-z]{24}$"
+                  },
+                  "expires_in": {
+                    "default": 600,
+                    "type": "integer",
+                    "minimum": 60,
+                    "maximum": 3600
+                  }
+                },
+                "required": [
+                  "profile_id",
+                  "end_user"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "client_token"
+                    },
+                    "token": {
+                      "type": "string",
+                      "description": "`lgx_ct_…` — give it to the one browser it is for; never log it."
+                    },
+                    "expires_at": {
+                      "type": "string"
+                    },
+                    "profile_id": {
+                      "type": "string"
+                    },
+                    "end_user_id": {
+                      "type": "string"
+                    },
+                    "conversation_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "token",
+                    "expires_at",
+                    "profile_id",
+                    "end_user_id",
+                    "conversation_id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/widget/sessions": {
+      "post": {
+        "operationId": "widget.sessions.create",
+        "summary": "Open an anonymous website-chat session with a publishable key, from an allowed origin",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "profile_id": {
+                    "type": "string",
+                    "pattern": "^prf_[0-9A-Za-z]{20}$"
+                  },
+                  "visitor_id": {
+                    "type": "string",
+                    "pattern": "^[0-9A-Za-z_-]{16,64}$"
+                  }
+                },
+                "required": [
+                  "profile_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "A client token for the visitor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "client_token"
+                    },
+                    "token": {
+                      "type": "string",
+                      "description": "`lgx_ct_…` — give it to the one browser it is for; never log it."
+                    },
+                    "expires_at": {
+                      "type": "string"
+                    },
+                    "profile_id": {
+                      "type": "string"
+                    },
+                    "end_user_id": {
+                      "type": "string"
+                    },
+                    "conversation_id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "visitor_id": {
+                      "type": "string",
+                      "description": "Keep it in the browser and send it next time to continue as the same visitor."
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "token",
+                    "expires_at",
+                    "profile_id",
+                    "end_user_id",
+                    "conversation_id",
+                    "visitor_id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "429": {
             "description": "Error",
             "content": {
               "application/json": {

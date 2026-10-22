@@ -13,6 +13,7 @@ from ligaxai import AsyncLigaX, RunEvent, ServerSentEvent, TextAssembler
 from ligaxai._streaming import SSEDecoder
 from ligaxai.fastapi import (
     client_dependency,
+    client_token_route,
     encode_run_event,
     encode_sse,
     run_stream_route,
@@ -264,3 +265,110 @@ async def test_webhook_dependency_rejects_a_signed_non_event() -> None:
         res = await http.post("/hooks", content=raw, headers=headers)
     assert res.status_code == 400 and res.json()["detail"] == "Webhook body is not an event."
     assert seen == []
+
+
+# -- client_token_route --------------------------------------------------------------------
+
+CLIENT_TOKEN = "lgx_ct_" + "e30" + "." + "A" * 43
+
+
+def _token_body(**overrides: object) -> dict[str, object]:
+    return {
+        "object": "client_token",
+        "token": CLIENT_TOKEN,
+        "expires_at": "2026-10-22T08:10:00.000Z",
+        "profile_id": PROFILE_ID,
+        "end_user_id": "user_42",
+        "conversation_id": None,
+        **overrides,
+    }
+
+
+async def test_client_token_route_mints_for_the_signed_in_user(recorder: Recorder) -> None:
+    recorder.responses = [json_response(201, _token_body())]
+    upstream = _upstream(recorder)
+    app = FastAPI()
+
+    async def current_user(request: Request) -> tuple[str, str]:
+        return (request.headers["x-user"], "Ada")
+
+    app.post("/token")(
+        client_token_route(lambda: upstream, PROFILE_ID, current_user, expires_in=300)
+    )
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), base_url="http://t"
+    ) as http:
+        r = await http.post("/token", headers={"x-user": "user_42"})
+    assert r.status_code == 200
+    assert r.headers["cache-control"] == "no-store"
+    assert r.json() == {"token": CLIENT_TOKEN, "expires_at": "2026-10-22T08:10:00.000Z"}
+    sent = json.loads(recorder.requests[0].content)
+    assert recorder.requests[0].url.path.endswith("/client_tokens")
+    assert sent == {
+        "profile_id": PROFILE_ID,
+        "end_user": {"id": "user_42", "name": "Ada"},
+        "expires_in": 300,
+    }
+
+
+async def test_client_token_route_accepts_a_sync_resolver_and_plain_id(
+    recorder: Recorder,
+) -> None:
+    recorder.responses = [json_response(201, _token_body())]
+    app = FastAPI()
+    app.post("/token")(
+        client_token_route(_upstream(recorder), PROFILE_ID, lambda _request: "user_42")
+    )
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), base_url="http://t"
+    ) as http:
+        r = await http.post("/token")
+    assert r.status_code == 200
+    # No `expires_in` given: the server's default applies.
+    assert json.loads(recorder.requests[0].content) == {
+        "profile_id": PROFILE_ID,
+        "end_user": {"id": "user_42"},
+    }
+
+
+async def test_client_token_route_answers_401_without_a_user(recorder: Recorder) -> None:
+    app = FastAPI()
+    app.post("/token")(client_token_route(_upstream(recorder), PROFILE_ID, lambda _r: None))
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), base_url="http://t"
+    ) as http:
+        r = await http.post("/token")
+    assert r.status_code == 401
+    assert r.headers["cache-control"] == "no-store"
+    assert r.json()["error"]["code"] == "unauthenticated"
+    assert recorder.requests == []  # the API was never called
+
+
+async def test_client_token_route_forwards_refusals(recorder: Recorder) -> None:
+    recorder.responses = [
+        json_response(
+            403,
+            {
+                "error": {
+                    "type": "permission_error",
+                    "code": "insufficient_scope",
+                    "message": "This key lacks client_tokens:write.",
+                    "request_id": "req_ct",
+                }
+            },
+        )
+    ]
+    app = FastAPI()
+    app.post("/token")(client_token_route(_upstream(recorder), PROFILE_ID, lambda _r: "u"))
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), base_url="http://t"
+    ) as http:
+        r = await http.post("/token")
+    assert r.status_code == 403
+    assert r.json() == {
+        "error": {
+            "code": "insufficient_scope",
+            "message": "This key lacks client_tokens:write.",
+            "request_id": "req_ct",
+        }
+    }

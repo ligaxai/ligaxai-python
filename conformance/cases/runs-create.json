@@ -1,0 +1,88 @@
+{
+  "name": "runs.create (wait) sends the run request with its Idempotency-Key and parses the run",
+  "args": {
+    "profile_id": "prf_AAAAAAAAAAAAAAAAAAAA",
+    "input": "Hello",
+    "end_user": {
+      "id": "user-42"
+    },
+    "metadata": {
+      "ticket": "T-1"
+    },
+    "idempotency_key": "conformance-key-0001"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/runs",
+    "headers": {
+      "Authorization": "Bearer test-key-not-a-secret",
+      "Idempotency-Key": "conformance-key-0001",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "profile_id": "prf_AAAAAAAAAAAAAAAAAAAA",
+      "input": "Hello",
+      "mode": "wait",
+      "end_user": {
+        "id": "user-42"
+      },
+      "metadata": {
+        "ticket": "T-1"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "x-request-id": "req_create"
+    },
+    "body": {
+      "object": "run",
+      "id": "0b6c1d2e-3f40-4a5b-8c6d-7e8f90a1b2c3",
+      "status": "completed",
+      "profile_id": "prf_AAAAAAAAAAAAAAAAAAAA",
+      "conversation_id": "conv_BBBBBBBBBBBBBBBBBBBBBBBB",
+      "end_user_id": "user-42",
+      "model": "gemini/gemini-flash/latest",
+      "created_at": "2026-10-22T08:00:00.000Z",
+      "completed_at": "2026-10-22T08:00:05.000Z",
+      "output": {
+        "text": "Hello there.",
+        "artifacts": [],
+        "sources": [],
+        "tool_calls": []
+      },
+      "required_action": null,
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 3,
+        "cost_usd": "0.000120"
+      },
+      "error": null,
+      "metadata": {
+        "ticket": "T-1"
+      }
+    }
+  },
+  "expect": {
+    "call": "runs.create",
+    "result": {
+      "object": "run",
+      "id": "0b6c1d2e-3f40-4a5b-8c6d-7e8f90a1b2c3",
+      "status": "completed",
+      "conversation_id": "conv_BBBBBBBBBBBBBBBBBBBBBBBB",
+      "end_user_id": "user-42",
+      "output": {
+        "text": "Hello there.",
+        "artifacts": [],
+        "sources": [],
+        "tool_calls": []
+      },
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 3,
+        "cost_usd": "0.000120"
+      }
+    }
+  }
+}

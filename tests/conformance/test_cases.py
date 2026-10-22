@@ -102,6 +102,8 @@ def test_case_sync(path: Path) -> None:
         error = exc
     check(case, outcome, error)
     assert seen, "the SDK never sent a request"
+    if "requests" in case["expect"]:
+        assert len(seen) == case["expect"]["requests"], "request count"
 
 
 @pytest.mark.parametrize("path", CASE_FILES, ids=[p.stem for p in CASE_FILES])
@@ -122,3 +124,5 @@ async def test_case_async(path: Path) -> None:
         error = exc
     check(case, outcome, error)
     assert seen, "the SDK never sent a request"
+    if "requests" in case["expect"]:
+        assert len(seen) == case["expect"]["requests"], "request count"

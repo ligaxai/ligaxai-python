@@ -69,6 +69,12 @@ SCHEMA_NAMES: dict[tuple[str, str], str] = {
     ("webhooks.update", "200"): "WebhookEndpoint",
     ("webhooks.delete", "200"): "WebhookEndpointDeleted",
     ("webhooks.test", "200"): "WebhookDelivery",
+    ("clientTokens.create", "request"): "ClientTokenCreateRequest",
+    ("clientTokens.create", "201"): "ClientToken",
+    # Publishable-key, browser-only: generated so the spec stays whole, never mounted on a
+    # client (a Python process is not a browser).
+    ("widget.sessions.create", "request"): "WidgetSessionCreateRequest",
+    ("widget.sessions.create", "201"): "WidgetSession",
     # Outgoing events (the spec's top-level `webhooks`, keyed by operationId). The four
     # `run.*` events share one body, so they must agree to share one name.
     ("events.run.completed", "request"): "RunWebhookEvent",

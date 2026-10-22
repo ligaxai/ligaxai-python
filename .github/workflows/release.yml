@@ -58,8 +58,13 @@ jobs:
           path: dist/
           if-no-files-found: error
 
+  # Gated on the repository variable PYPI_PUBLISH_ENABLED=true, set once the trusted publishers for
+  # `release.yml` + environments `pypi-dev` / `pypi` exist on PyPI. Until then the build above still
+  # proves the sdist and wheel, and `skipped` below says why nothing was published — instead of an
+  # `invalid-publisher` failure on every push.
   publish:
     needs: build
+    if: vars.PYPI_PUBLISH_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment:
       name: ${{ needs.build.outputs.channel == 'stable' && 'pypi' || 'pypi-dev' }}
@@ -77,3 +82,11 @@ jobs:
         with:
           attestations: true
           print-hash: true
+
+  skipped:
+    needs: build
+    if: vars.PYPI_PUBLISH_ENABLED != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::notice title=PyPI publish skipped::Built ${{ needs.build.outputs.version }} but did not publish. Add the PyPI trusted publisher (repository ligaxai/ligaxai-python, workflow release.yml, environment pypi-dev and pypi), then set the repository variable PYPI_PUBLISH_ENABLED=true."

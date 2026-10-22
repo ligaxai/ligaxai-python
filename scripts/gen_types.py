@@ -16,8 +16,8 @@ components. ``normalise`` therefore:
   (``SCHEMA_NAMES``), refusing two different bodies under one name — so the four inline
   copies of a run must agree with ``components/schemas/Run``;
 * hoists the event bodies of the top-level ``webhooks`` section (what the server sends to
-  a receiver), which the generator would otherwise ignore — ``RunWebhookEvent`` and
-  ``ApiKeyLimitWebhookEvent``;
+  a receiver), which the generator would otherwise ignore — ``RunWebhookEvent``,
+  ``ApiKeyLimitWebhookEvent`` and ``WebhookTestEvent``;
 * inlines bare enum components (``RunStatus``), so ``run.status`` is a ``Literal`` and
   ``run.status == "completed"`` holds — as a component it would be a ``RootModel``;
 * names nested objects (``NESTED_NAMES``) so they do not collide (``Usage`` / ``Usage1``);
@@ -76,6 +76,7 @@ SCHEMA_NAMES: dict[tuple[str, str], str] = {
     ("events.run.canceled", "request"): "RunWebhookEvent",
     ("events.run.requires_action", "request"): "RunWebhookEvent",
     ("events.api_key.limit_reached", "request"): "ApiKeyLimitWebhookEvent",
+    ("events.webhook.test", "request"): "WebhookTestEvent",
 }
 
 # Nested objects worth a public name: (component, property) -> new component. Without this
@@ -96,6 +97,7 @@ NESTED_NAMES: list[tuple[str, str, str]] = [
     ("UsageReport", "data", "UsageBucket"),
     ("RunWebhookEvent", "data", "RunWebhookEventData"),
     ("ApiKeyLimitWebhookEvent", "data", "ApiKeyLimitWebhookEventData"),
+    ("WebhookTestEvent", "data", "WebhookTestEventData"),
 ]
 
 # Counts the platform declares as `z.number()` (JSON Schema "number") that are integers by

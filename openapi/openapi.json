@@ -1129,6 +1129,60 @@
           }
         }
       }
+    },
+    "webhook.test": {
+      "post": {
+        "operationId": "events.webhook.test",
+        "summary": "Sent by Send test (Settings) or POST /webhooks/{id}/test",
+        "description": "Signed per Standard Webhooks: verify webhook-signature over webhook-id.webhook-timestamp.body with the endpoint secret before trusting the body. Answer 2xx within 15 s; anything else is retried.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "webhook.test"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "const": "webhook_endpoint"
+                      },
+                      "id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "id"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted"
+          }
+        }
+      }
     }
   },
   "paths": {

@@ -271,6 +271,11 @@ class ApiKeyLimitWebhookEventData(BaseModel):
     resets_at: str | None
 
 
+class WebhookTestEventData(BaseModel):
+    object: Literal["webhook_endpoint"]
+    id: str
+
+
 class Profile(BaseModel):
     object: Literal["profile"]
     id: str
@@ -293,6 +298,12 @@ class ApiKeyLimitWebhookEvent(BaseModel):
     type: Literal["api_key.limit_reached"]
     timestamp: str
     data: ApiKeyLimitWebhookEventData
+
+
+class WebhookTestEvent(BaseModel):
+    type: Literal["webhook.test"]
+    timestamp: str
+    data: WebhookTestEventData
 
 
 class ProfileList(BaseModel):

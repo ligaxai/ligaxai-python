@@ -42,7 +42,7 @@ _generated/         models produced by scripts/gen_types.py from openapi/openapi
 3. **Tests never hit the network.** Inject `httpx2.MockTransport` through `http_client=`;
    see `tests/conftest.py`. A test that needs a sleep patches `_base_client._sleep`.
 4. **One retry policy.** It lives in `_base_client.py` and is covered by
-   `tests/unit/test_retries.py`. Never retry 402/403; never retry after a stream started.
+   `tests/unit/test_retries.py`. Never retry 402/403/422; never retry after a stream started.
 5. **No secrets, ever.** No real keys in tests, fixtures, examples or docs. Logging redacts
    `Authorization`; keep it that way when adding log lines.
 6. **Public surface is typed.** `pyright --verifytypes` must stay ≥ 95 %: annotate

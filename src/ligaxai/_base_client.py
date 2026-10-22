@@ -10,8 +10,9 @@ Retry policy, in the order it is evaluated:
 2. Transport errors (connect, read, write, timeout) are retried — a POST carries an
    ``Idempotency-Key`` that is minted once and reused across attempts, so a replayed
    write is safe.
-3. 408, 409, 429 and every 5xx are retried. 402 and 403 never are: payment and permission
-   failures do not fix themselves on a second attempt.
+3. 408, 409, 429 and every 5xx are retried. 402, 403 and 422 never are: payment,
+   permission and validation failures (a spend limit, a scope, ``idempotency_key_reused``)
+   do not fix themselves on a second attempt — and the server marks none of them retryable.
 4. Nothing is retried once a stream has started — the consumer resumes with
    ``last_event_id`` instead.
 
@@ -70,7 +71,7 @@ INITIAL_RETRY_DELAY = 0.5
 MAX_RETRY_DELAY = 8.0
 MAX_RETRY_AFTER = 120.0
 RETRYABLE_STATUS = frozenset({408, 409, 429})
-NEVER_RETRY_STATUS = frozenset({402, 403})
+NEVER_RETRY_STATUS = frozenset({402, 403, 422})
 IDEMPOTENT_METHODS = frozenset({"POST"})
 
 USER_AGENT_TEMPLATE = "ligaxai-python/{version} (python/{py}; {os}/{arch})"

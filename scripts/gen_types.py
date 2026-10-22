@@ -76,6 +76,13 @@ SCHEMA_NAMES: dict[tuple[str, str], str] = {
     ("connectSessions.get", "200"): "ConnectSession",
     ("endUsers.connections.list", "200"): "EndUserConnectionList",
     ("endUsers.connections.delete", "200"): "EndUserConnectionDeleted",
+    ("files.create", "201"): "FileObject",
+    ("files.get", "200"): "FileObject",
+    ("files.delete", "200"): "FileDeleted",
+    # Protocol endpoints (MCP / A2A JSON-RPC): generated so the spec stays whole, never
+    # mounted on a client — an MCP or A2A client library speaks these, not this SDK.
+    ("mcp.call", "request"): "McpJsonRpcRequest",
+    ("a2a.call", "request"): "A2aJsonRpcRequest",
     # Publishable-key, browser-only: generated so the spec stays whole, never mounted on a
     # client (a Python process is not a browser).
     ("widget.sessions.create", "request"): "WidgetSessionCreateRequest",

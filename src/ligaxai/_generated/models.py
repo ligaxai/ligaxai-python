@@ -63,6 +63,10 @@ class EndUser(BaseModel):
     name: str | None = Field(None, max_length=200)
 
 
+class Attachment(RootModel[str]):
+    root: str = Field(..., pattern="^file_[0-9A-Za-z]{24}$")
+
+
 class Metadata(RootModel[str]):
     root: str = Field(..., max_length=512)
 
@@ -77,6 +81,7 @@ class RunRequest(BaseModel):
     end_user: EndUser | None = None
     model: str | None = Field(None, max_length=200, min_length=1)
     mode: Literal["wait", "stream", "async"] | None = "wait"
+    attachments: list[Attachment] | None = Field(None, max_length=10)
     metadata: dict[str, Metadata] | None = None
 
 
@@ -277,6 +282,37 @@ class EndUserConnectionDeleted(BaseModel):
     object: Literal["connection"]
     id: str
     deleted: Literal[True]
+
+
+class FileObject(BaseModel):
+    object: Literal["file"]
+    id: str
+    filename: str
+    content_type: str
+    size_bytes: int
+    end_user_id: str | None
+    created_at: str
+    expires_at: str
+
+
+class FileDeleted(BaseModel):
+    object: Literal["file"]
+    id: str
+    deleted: Literal[True]
+
+
+class McpJsonRpcRequest(BaseModel):
+    jsonrpc: Literal["2.0"]
+    id: str | int | None = None
+    method: str
+    params: dict[str, Any] | None = None
+
+
+class A2aJsonRpcRequest(BaseModel):
+    jsonrpc: Literal["2.0"]
+    id: str | int | None = None
+    method: str
+    params: dict[str, Any] | None = None
 
 
 class RequiredAction(BaseModel):

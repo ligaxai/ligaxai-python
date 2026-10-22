@@ -3,7 +3,7 @@
 `ligaxai` is the Python SDK for the **LigaX Agent API** (`/api/public/v1`), built from an
 OpenAI/Anthropic-shaped template. v0.1 covers runs, conversations, profiles, keys and
 usage, webhook endpoints, client tokens and end-user connections against the pinned spec
-`public-api-spec-v0.3.0`.
+`public-api-spec-v0.5.0`.
 
 ## Package shape
 

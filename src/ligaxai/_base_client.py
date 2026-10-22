@@ -10,7 +10,9 @@ Retry policy, in the order it is evaluated:
 2. Transport errors (connect, read, write, timeout) are retried — a POST carries an
    ``Idempotency-Key`` that is minted once and reused across attempts, so a replayed
    write is safe.
-3. 408, 409, 429 and every 5xx are retried. 402, 403 and 422 never are: payment,
+3. 408, 429 and every 5xx are retried; a 409 only when the server marks it retryable
+   (``x-should-retry: true``, e.g. ``idempotency_in_progress``). 402, 403 and 422 never
+   are: payment,
    permission and validation failures (a spend limit, a scope, ``idempotency_key_reused``)
    do not fix themselves on a second attempt — and the server marks none of them retryable.
 4. Nothing is retried once a stream has started — the consumer resumes with
@@ -71,7 +73,7 @@ DEFAULT_MAX_RETRIES = 2
 INITIAL_RETRY_DELAY = 0.5
 MAX_RETRY_DELAY = 8.0
 MAX_RETRY_AFTER = 120.0
-RETRYABLE_STATUS = frozenset({408, 409, 429})
+RETRYABLE_STATUS = frozenset({408, 429})
 NEVER_RETRY_STATUS = frozenset({402, 403, 422})
 IDEMPOTENT_METHODS = frozenset({"POST"})
 
@@ -138,13 +140,20 @@ class BaseClient:
         }
 
     def _build_headers(self, method: str, options: RequestOptions, stream: bool) -> dict[str, str]:
-        headers = self.default_headers()
+        # Merged case-insensitively: a caller's `idempotency-key` or `authorization` replaces
+        # ours instead of travelling alongside it as a second header.
+        merged: dict[str, tuple[str, str]] = {}
+        for source in (self.default_headers(), options.headers):
+            for name, value in source.items():
+                merged[name.lower()] = (name, value)
         if stream:
-            headers["Accept"] = "text/event-stream"
-        headers.update(options.headers)
-        if method.upper() in IDEMPOTENT_METHODS and "Idempotency-Key" not in headers:
-            headers["Idempotency-Key"] = options.idempotency_key or f"sdk-{uuid.uuid4()}"
-        return headers
+            merged["accept"] = ("Accept", "text/event-stream")
+        if method.upper() in IDEMPOTENT_METHODS and "idempotency-key" not in merged:
+            merged["idempotency-key"] = (
+                "Idempotency-Key",
+                options.idempotency_key or f"sdk-{uuid.uuid4()}",
+            )
+        return dict(merged.values())
 
     def _build_url(self, path: str) -> httpx2.URL:
         return self.base_url.join(path.lstrip("/"))

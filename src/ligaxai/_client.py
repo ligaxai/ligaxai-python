@@ -53,9 +53,10 @@ class MissingAPIKeyError(APIError, ValueError):
     ``AuthenticationError`` because no request was made — there is no response to carry.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, message: str | None = None) -> None:
         super().__init__(
-            "No API key provided. Pass `api_key=` or set the "
+            message
+            or "No API key provided. Pass `api_key=` or set the "
             f"{API_KEY_ENV_VAR} environment variable."
         )
 
@@ -70,6 +71,12 @@ def _resolve_api_key(api_key: str | None) -> str:
     key = api_key if api_key is not None else os.environ.get(API_KEY_ENV_VAR)
     if not key:
         raise MissingAPIKeyError()
+    # A key is printable ASCII with no spaces. Anything else is a copy-paste slip (a trailing
+    # newline from a secrets file) that would otherwise surface as a confusing transport error.
+    if not all(0x21 <= ord(ch) <= 0x7E for ch in key):
+        raise MissingAPIKeyError(
+            "The API key contains whitespace or control characters; check it was copied exactly."
+        )
     return key
 
 

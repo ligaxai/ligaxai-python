@@ -31,9 +31,16 @@ _LEVELS: dict[str, int] = {
 _AUTH_RE = re.compile(r"(?i)(authorization['\"]?\s*[:=]\s*['\"]?)([^'\",}\s]+(?:\s+[^'\",}\s]+)?)")
 
 
+# The credentials this SDK handles, wherever they appear in a message — not only after an
+# `Authorization` label: keys and client tokens (`lgx_sk_…`, `lgx_pk_…`, `lgx_ct_…`) and
+# webhook secrets (`whsec_…`).
+_TOKEN_RE = re.compile(r"\b(lgx_(?:sk|pk|ct)_|whsec_)[A-Za-z0-9._~+/=-]+")
+
+
 def redact(text: str) -> str:
-    """Replace the value of any ``Authorization`` header found in ``text``."""
-    return _AUTH_RE.sub(r"\1[redacted]", text)
+    """Replace any ``Authorization`` value, and any LigaX key, token or webhook secret, in
+    ``text``."""
+    return _TOKEN_RE.sub(r"\1[redacted]", _AUTH_RE.sub(r"\1[redacted]", text))
 
 
 class _RedactingFilter(logging.Filter):

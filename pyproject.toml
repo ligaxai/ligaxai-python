@@ -24,21 +24,24 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
   "Typing :: Typed",
 ]
+# Bounded below by what the suite runs against and above by the next major, so a breaking
+# release of a dependency never reaches a user's install unannounced.
 dependencies = [
-  "httpx2",
-  "pydantic>=2",
-  "anyio>=4",
+  "httpx2>=2.16,<3",
+  "pydantic>=2.7,<3",
+  "anyio>=4,<5",
   "typing-extensions>=4.10",
-  "standardwebhooks>=1.0",
+  "standardwebhooks>=1.0,<2",
 ]
 
 [project.optional-dependencies]
-fastapi = ["fastapi>=0.115"]
+fastapi = ["fastapi>=0.115,<1"]
 
 [project.urls]
-Homepage = "https://github.com/ligaxai/ligaxai"
-Repository = "https://github.com/ligaxai/ligaxai"
-Changelog = "https://github.com/ligaxai/ligaxai/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/ligaxai/ligaxai-python"
+Repository = "https://github.com/ligaxai/ligaxai-python"
+Changelog = "https://github.com/ligaxai/ligaxai-python/blob/main/CHANGELOG.md"
+Security = "https://github.com/ligaxai/ligaxai-python/blob/main/SECURITY.md"
 
 [dependency-groups]
 dev = [

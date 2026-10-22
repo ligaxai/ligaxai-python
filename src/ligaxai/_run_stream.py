@@ -141,6 +141,10 @@ class _Part:
     emitted: int = 0  # units already handed out as "new text"
 
 
+#: Longest answer part the assembler builds, in UTF-16 units (about 32 MB of text).
+MAX_TEXT_UNITS = 16 * 1024 * 1024
+
+
 class TextAssembler:
     """Builds a run's answer from ``part.start`` / ``text.delta`` frames.
 
@@ -182,7 +186,13 @@ class TextAssembler:
         if event.type == "text.delta":
             offset = payload.get("offset")
             text = payload.get("text")
-            if not isinstance(offset, int) or offset < 0 or not isinstance(text, str):
+            # An offset past any real answer would make `write` pad gigabytes: drop the frame.
+            if (
+                not isinstance(offset, int)
+                or offset < 0
+                or offset > MAX_TEXT_UNITS
+                or not isinstance(text, str)
+            ):
                 return ""
             return self.write(part_id, offset, text)
         return ""

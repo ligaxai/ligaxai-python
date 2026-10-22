@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased] — 0.1.0
 
+### Changed
+
+- Spec pinned to `public-api-spec-v0.6.0`. A run's `Idempotency-Key` replay that arrives while the
+  first request is still starting answers `409 idempotency_in_progress` with `x-should-retry: true`,
+  which the client retries. Run events are a safe subset: tool events carry name, status and
+  duration only, and `reasoning.delta` / `usage.delta` are no longer sent. Anonymous website visitors
+  can chat only; answering an approval with their token is `403 approval_not_allowed`.
+
 ### Added
 
 - **Agent API v0.1** (`SPEC_VERSION` = `public-api-spec-v0.1.0`), identical on `LigaX` and

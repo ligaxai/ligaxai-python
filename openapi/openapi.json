@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "LigaX Agent API",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "description": "Run the agents you configure in LigaX from your own software. Authenticate with an organisation API key from Settings → Developers."
   },
   "servers": [
@@ -1233,12 +1233,13 @@
       "post": {
         "operationId": "runs.create",
         "summary": "Run an agent profile",
-        "description": "mode \"wait\" (default) returns the finished run (200), or the run so far with 202 after 240 s; \"stream\" returns text/event-stream of LAE frames with X-Run-Id; \"async\" returns 202 at once.",
+        "description": "mode \"wait\" (default) returns the finished run (200), or the run so far with 202 after 240 s; \"stream\" returns text/event-stream of LAE frames with X-Run-Id; \"async\" returns 202 at once. Streams and event replays carry a safe subset of frames: answer text, lifecycle, citations, artifacts, approvals, and tool frames reduced to id, name, status and duration — never tool arguments or results, reasoning, guardrail internals or per-step cost.",
         "parameters": [
           {
             "name": "Idempotency-Key",
             "in": "header",
             "required": false,
+            "description": "Retry-safe creation: the same key and body answer the same run (200). A different body is 422 idempotency_key_reused; while the first request is still starting the run, 409 idempotency_in_progress with x-should-retry: true.",
             "schema": {
               "type": "string",
               "minLength": 8,
@@ -4246,6 +4247,61 @@
               }
             }
           },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "404": {
             "description": "Error",
             "content": {
@@ -5158,6 +5214,19 @@
       "post": {
         "operationId": "webhooks.create",
         "summary": "Create a webhook endpoint; the signing secret is returned once",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Retry-safe creation: a replay with the same key and body answers 200 with the same endpoint and its secret, so a lost response never strands a secret. A different body is 422 idempotency_key_reused; a replay while the first is in flight is 409 idempotency_in_progress (retryable).",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 255
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5209,6 +5278,101 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Replay of an earlier create with the same Idempotency-Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "webhook_endpoint"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "event_types": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "run.completed",
+                          "run.failed",
+                          "run.canceled",
+                          "run.requires_action",
+                          "api_key.limit_reached",
+                          "connection.created",
+                          "connection.deleted"
+                        ]
+                      }
+                    },
+                    "profile_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "disabled"
+                      ]
+                    },
+                    "disabled_reason": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "manual",
+                            "failing"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "secret_hint": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "secret": {
+                      "type": "string",
+                      "description": "The signing secret (`whsec_…`). Returned once; store it now."
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "url",
+                    "description",
+                    "event_types",
+                    "profile_ids",
+                    "status",
+                    "disabled_reason",
+                    "secret_hint",
+                    "created_at",
+                    "updated_at",
+                    "secret"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "201": {
             "description": "The endpoint and its secret",
             "content": {

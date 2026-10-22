@@ -593,7 +593,7 @@ make build        # sdist + wheel
 make gen-types    # regenerate src/ligaxai/_generated/models.py from openapi/openapi.json
 ```
 
-The contract is pinned in `SPEC_VERSION` (`public-api-spec-v0.5.0`) and copied to
+The contract is pinned in `SPEC_VERSION` (`public-api-spec-v0.6.0`) and copied to
 `openapi/openapi.json` from the platform's `docs/public-api/spec/openapi.json`.
 `make check-types` fails if the generated models are stale against it.
 

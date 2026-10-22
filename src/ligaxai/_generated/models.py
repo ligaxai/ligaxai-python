@@ -130,6 +130,33 @@ class WebhookEndpointCreateRequest(BaseModel):
     profile_ids: list[ProfileId] | None = Field(None, max_length=50)
 
 
+class WebhooksCreateResponse200(BaseModel):
+    object: Literal["webhook_endpoint"]
+    id: str
+    url: str
+    description: str
+    event_types: list[
+        Literal[
+            "run.completed",
+            "run.failed",
+            "run.canceled",
+            "run.requires_action",
+            "api_key.limit_reached",
+            "connection.created",
+            "connection.deleted",
+        ]
+    ]
+    profile_ids: list[str]
+    status: Literal["active", "disabled"]
+    disabled_reason: Literal["manual", "failing"] | None
+    secret_hint: str
+    created_at: str
+    updated_at: str
+    secret: str = Field(
+        ..., description="The signing secret (`whsec_…`). Returned once; store it now."
+    )
+
+
 class WebhookEndpointWithSecret(BaseModel):
     object: Literal["webhook_endpoint"]
     id: str

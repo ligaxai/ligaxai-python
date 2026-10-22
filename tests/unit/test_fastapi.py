@@ -7,13 +7,13 @@ from fastapi import Depends, FastAPI
 
 from ligaxai import AsyncLigaX, ServerSentEvent
 from ligaxai.fastapi import client_dependency, encode_sse, stream_proxy
-from ligaxai.resources.health import HealthResponse
+from tests.conftest import Status
 
 
 def test_encode_sse_round_trips_fields() -> None:
     raw = encode_sse(ServerSentEvent(event="delta", id="3", retry=10, data="a\nb"))
     assert raw == b"event: delta\nid: 3\nretry: 10\ndata: a\ndata: b\n\n"
-    assert encode_sse(HealthResponse(status="ok")) == b'data: {"status":"ok","version":null}\n\n'
+    assert encode_sse(Status(status="ok")) == b'data: {"status":"ok","version":null}\n\n'
     assert encode_sse({"k": 1}) == b'data: {"k": 1}\n\n'
 
 

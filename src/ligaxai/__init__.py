@@ -3,9 +3,11 @@
 from ligaxai import LigaX
 
 client = LigaX()  # reads LIGAX_API_KEY
-client.health.get()
+run = client.runs.wait(profile_id="prf_...", input="Hello")
+print(run.output.text)
 """
 
+from . import types
 from ._client import (
     API_KEY_ENV_VAR,
     BASE_URL_ENV_VAR,
@@ -30,8 +32,17 @@ from ._exceptions import (
     UnprocessableEntityError,
     WebhookVerificationError,
 )
+from ._generated.models import Run
 from ._models import BaseModel
 from ._pagination import AsyncPage, SyncPage
+from ._run_stream import (
+    AsyncRunStream,
+    AsyncRunStreamManager,
+    RunEvent,
+    RunEventList,
+    RunStream,
+    TextAssembler,
+)
 from ._streaming import AsyncStream, EventRegistry, ServerSentEvent, Stream
 from ._types import NOT_GIVEN, NotGiven, RequestOptions, Timeout
 from ._version import __version__
@@ -47,6 +58,8 @@ __all__ = [
     "APITimeoutError",
     "AsyncLigaX",
     "AsyncPage",
+    "AsyncRunStream",
+    "AsyncRunStreamManager",
     "AsyncStream",
     "AuthenticationError",
     "BadRequestError",
@@ -62,11 +75,17 @@ __all__ = [
     "PermissionDeniedError",
     "RateLimitError",
     "RequestOptions",
+    "Run",
+    "RunEvent",
+    "RunEventList",
+    "RunStream",
     "ServerSentEvent",
     "Stream",
     "SyncPage",
+    "TextAssembler",
     "Timeout",
     "UnprocessableEntityError",
     "WebhookVerificationError",
     "__version__",
+    "types",
 ]

@@ -32,9 +32,9 @@ def client_dependency(**client_kwargs: Any) -> Callable[[], AsyncLigaX]:
 
         get_client = client_dependency()
 
-        @app.get("/health")
-        async def health(client: AsyncLigaX = Depends(get_client)):
-            return await client.health.get()
+        @app.get("/me")
+        async def me(client: AsyncLigaX = Depends(get_client)):
+            return await client.keys.self()
     """
     cached: AsyncLigaX | None = None
 

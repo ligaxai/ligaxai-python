@@ -316,7 +316,7 @@ def generate(out: Path) -> None:
             "builtin",
             "--disable-timestamp",
         ]
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", check=False)
         if proc.returncode != 0:
             print(proc.stdout, proc.stderr, sep="\n")
             raise SystemExit(f"gen_types: datamodel-codegen failed ({proc.returncode})")
@@ -338,10 +338,14 @@ def generate(out: Path) -> None:
         input=body,
         capture_output=True,
         text=True,
+        # Explicit, because `text=True` alone uses the locale code page — cp1252 on Windows — and
+        # the models carry non-ASCII (`…`) that ruff then cannot decode (exit 2 on windows-latest).
+        encoding="utf-8",
         cwd=ROOT,
         check=True,
     )
-    out.write_text(fmt.stdout, encoding="utf-8")
+    # LF on every platform, matching `.gitattributes`, so a Windows run writes the committed bytes.
+    out.write_text(fmt.stdout, encoding="utf-8", newline="\n")
 
 
 def main() -> int:

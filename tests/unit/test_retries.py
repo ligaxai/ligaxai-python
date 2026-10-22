@@ -9,6 +9,7 @@ import pytest
 from ligaxai import (
     APIConnectionError,
     APITimeoutError,
+    BaseModel,
     InternalServerError,
     PaymentRequiredError,
     PermissionDeniedError,
@@ -17,6 +18,10 @@ from ligaxai import (
 )
 from ligaxai._base_client import BaseClient
 from tests.conftest import Recorder, error_body, json_response, make_async_client, make_sync_client
+
+
+class Thing(BaseModel):
+    id: str
 
 
 def test_429_with_retry_after_seconds(recorder: Recorder, no_sleep: list[float]) -> None:
@@ -121,9 +126,7 @@ def test_idempotency_key_minted_on_post_and_reused(
 ) -> None:
     recorder.responses = [json_response(503), json_response(body={"id": "1"})]
     client = make_sync_client(recorder)
-    from ligaxai._generated import ExampleModel
-
-    client.request("POST", "/things", cast_to=ExampleModel, json={"a": 1})
+    client.request("POST", "/things", cast_to=Thing, json={"a": 1})
     keys = [r.headers["Idempotency-Key"] for r in recorder.requests]
     assert len(keys) == 2
     assert keys[0] == keys[1]
@@ -132,10 +135,8 @@ def test_idempotency_key_minted_on_post_and_reused(
 
 def test_idempotency_key_override(recorder: Recorder) -> None:
     recorder.responses = [json_response(body={"id": "1"})]
-    from ligaxai._generated import ExampleModel
-
     make_sync_client(recorder).request(
-        "POST", "/things", cast_to=ExampleModel, options=RequestOptions(idempotency_key="mine")
+        "POST", "/things", cast_to=Thing, options=RequestOptions(idempotency_key="mine")
     )
     assert recorder.requests[0].headers["Idempotency-Key"] == "mine"
 

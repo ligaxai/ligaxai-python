@@ -43,6 +43,9 @@ jobs:
           uv run mypy
           uv run pyright
 
+      - name: Generated models match the pinned spec
+        run: uv run python scripts/gen_types.py --check
+
       - name: Tests with coverage gate
         run: uv run pytest --cov --cov-report=term-missing
 

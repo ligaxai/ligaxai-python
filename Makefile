@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 .PHONY: help setup lint format typecheck check test test-unit test-conf test-cov build \
-        gen-types sync-spec clean
+        gen-types check-types sync-spec clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sort | \
@@ -23,7 +23,7 @@ typecheck: ## mypy (strict) + pyright (strict) + public-API completeness >= 95%
 	uv run pyright
 	uv run python scripts/verify_types.py --min 95
 
-check: lint typecheck ## Lint + typecheck — run before pushing
+check: lint typecheck check-types ## Lint + typecheck + generated-model drift — run before pushing
 
 test: ## All tests (unit + conformance); HTTP is always mocked
 	uv run pytest
@@ -42,6 +42,9 @@ build: ## Build sdist + wheel into dist/
 
 gen-types: ## Regenerate src/ligaxai/_generated/models.py from openapi/openapi.json
 	uv run python scripts/gen_types.py
+
+check-types: ## Fail if _generated/models.py is stale against openapi/openapi.json
+	uv run python scripts/gen_types.py --check
 
 sync-spec: ## Download openapi.json + conformance fixtures for SPEC_VERSION
 	uv run python scripts/sync_spec.py

@@ -7,15 +7,23 @@ yet, so ``make gen-types`` is safe in a fresh clone.
 ``--check`` regenerates into a temporary file and fails if it differs from the committed
 models — the drift guard that keeps ``_generated/`` honest against the pinned spec.
 
-**Why the spec is normalised first.** The platform emits every body schema inline (its
-generator uses Zod's ``reused: 'inline'``), with shared pieces in a per-body ``$defs`` and
-references written as ``#/$defs/RunStatus``. In an OpenAPI document a ``#`` pointer
-resolves against the *document* root, where no ``$defs`` exists, so the raw file cannot be
-fed to a generator (datamodel-codegen answers "Models not found"). ``normalise`` hoists
-each body and its ``$defs`` into ``components/schemas`` under a stable name
-(``SCHEMA_NAMES``), rewrites the references, refuses two different bodies under one name,
-and drops ``additionalProperties: false`` from response bodies — the generator would turn
-it into ``extra="forbid"``, and an SDK must keep working when the server adds a field.
+**Why the spec is normalised first.** The platform names the schemas it reuses
+(``Run``, ``RunStatus``, ``Profile``, ``RunEvent``) in ``components/schemas``, but writes
+every response and request body inline, and datamodel-codegen only names what lives in
+components. ``normalise`` therefore:
+
+* hoists each inline body into ``components/schemas`` under a stable name
+  (``SCHEMA_NAMES``), refusing two different bodies under one name — so the four inline
+  copies of a run must agree with ``components/schemas/Run``;
+* inlines bare enum components (``RunStatus``), so ``run.status`` is a ``Literal`` and
+  ``run.status == "completed"`` holds — as a component it would be a ``RootModel``;
+* names nested objects (``NESTED_NAMES``) so they do not collide (``Usage`` / ``Usage1``);
+* types integer counts as ``int`` (``INTEGER_FIELDS``);
+* drops ``additionalProperties: false`` from response schemas — the generator would turn
+  it into ``extra="forbid"``, and an SDK must keep working when the server adds a field;
+* drops ``propertyNames`` (rendered as ``constr()`` in a type position).
+
+Error envelopes are left inline and so not generated: they surface as exceptions.
 """
 
 from __future__ import annotations
@@ -90,20 +98,6 @@ def _pascal(operation_id: str) -> str:
     return "".join(p[:1].upper() + p[1:] for p in operation_id.replace("-", ".").split("."))
 
 
-def _rewrite_refs(node: Any) -> Any:
-    if isinstance(node, dict):
-        out: dict[str, Any] = {}
-        for key, value in node.items():
-            if key == "$ref" and isinstance(value, str) and value.startswith("#/$defs/"):
-                out[key] = "#/components/schemas/" + value.removeprefix("#/$defs/")
-            else:
-                out[key] = _rewrite_refs(value)
-        return out
-    if isinstance(node, list):
-        return [_rewrite_refs(v) for v in node]
-    return node
-
-
 def _open_objects(node: Any) -> Any:
     """Drop ``additionalProperties: false`` everywhere (see module docstring).
 
@@ -139,12 +133,15 @@ def _is_plain_enum(schema: dict[str, Any]) -> bool:
     return set(schema) <= {"type", "enum", "description"} and "enum" in schema
 
 
+COMPONENT_REF = "#/components/schemas/"
+
+
 def _inline_refs(node: Any, inline: dict[str, Any]) -> Any:
-    """Replace ``#/$defs/<name>`` with the schema itself for every name in ``inline``."""
+    """Replace a component ``$ref`` with the schema itself for every name in ``inline``."""
     if isinstance(node, dict):
         ref = node.get("$ref")
-        if isinstance(ref, str) and ref.startswith("#/$defs/"):
-            name = ref.removeprefix("#/$defs/")
+        if isinstance(ref, str) and ref.startswith(COMPONENT_REF):
+            name = ref.removeprefix(COMPONENT_REF)
             if name in inline:
                 return copy.deepcopy(inline[name])
         return {k: _inline_refs(v, inline) for k, v in node.items()}
@@ -179,7 +176,7 @@ def _number_to_integer(schema: Any) -> Any:
 def _hoist(schemas: dict[str, Any], parent: str, prop: str, name: str) -> None:
     """Move ``schemas[parent].properties[prop]``'s object schema to ``schemas[name]``."""
     holder = schemas[parent]["properties"]
-    ref = {"$ref": f"#/components/schemas/{name}"}
+    ref = {"$ref": f"{COMPONENT_REF}{name}"}
 
     def take(node: dict[str, Any]) -> dict[str, Any]:
         if node.get("type") == "object":
@@ -197,29 +194,34 @@ def _hoist(schemas: dict[str, Any], parent: str, prop: str, name: str) -> None:
     holder[prop] = take(holder[prop])
 
 
+def _prepare(schema: Any, *, response: bool) -> Any:
+    body = _drop_property_names(_integers(schema))
+    return _open_objects(body) if response else body
+
+
 def normalise(spec: dict[str, Any]) -> dict[str, Any]:
     """Return a copy of ``spec`` whose bodies all live in ``components/schemas``."""
     doc = copy.deepcopy(spec)
     schemas: dict[str, Any] = doc.setdefault("components", {}).setdefault("schemas", {})
 
+    enums = {name: body for name, body in schemas.items() if _is_plain_enum(body)}
+    doc = _inline_refs(doc, enums)
+    schemas = doc["components"]["schemas"]
+    for name in enums:
+        del schemas[name]
+    # The spec's own components are all response shapes.
+    for name in list(schemas):
+        schemas[name] = _prepare(schemas[name], response=True)
+
     def register(name: str, schema: dict[str, Any], *, response: bool) -> dict[str, str]:
-        body = dict(schema)
-        defs: dict[str, Any] = body.pop("$defs", None) or {}
-        # A bare enum ($defs/RunStatus) is inlined, so the field is a `Literal` rather than a
-        # `RootModel` — `run.status == "completed"` must be true for a completed run.
-        enums = {k: v for k, v in defs.items() if _is_plain_enum(v)}
-        body = _inline_refs(body, enums)
-        for def_name, def_schema in defs.items():
-            if def_name not in enums:
-                register(def_name, _inline_refs(def_schema, enums), response=response)
-        body = _drop_property_names(_integers(_rewrite_refs(body)))
-        if response:
-            body = _open_objects(body)
+        if "$ref" in schema:
+            return schema
+        body = _prepare(schema, response=response)
         existing = schemas.get(name)
         if existing is not None and existing != body:
             raise SystemExit(f"gen_types: two different schemas want the name {name!r}")
         schemas[name] = body
-        return {"$ref": f"#/components/schemas/{name}"}
+        return {"$ref": f"{COMPONENT_REF}{name}"}
 
     for path_item in doc.get("paths", {}).values():
         for op in path_item.values():

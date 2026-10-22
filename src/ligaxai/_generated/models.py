@@ -10,6 +10,13 @@ from ligaxai._models import BaseModel
 from pydantic import ConfigDict, Field, RootModel
 
 
+class RunEvent(BaseModel):
+    seq: int
+    type: str
+    payload: Any
+    created_at: str
+
+
 class Input(RootModel[str]):
     root: str = Field(..., max_length=100000, min_length=1)
 
@@ -38,13 +45,6 @@ class RunRequest(BaseModel):
     model: str | None = Field(None, max_length=200, min_length=1)
     mode: Literal["wait", "stream", "async"] | None = "wait"
     metadata: dict[str, Metadata] | None = None
-
-
-class RunEvent(BaseModel):
-    seq: int
-    type: str
-    payload: Any
-    created_at: str
 
 
 class RunEventList(BaseModel):

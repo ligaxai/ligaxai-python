@@ -22,6 +22,471 @@
         "scheme": "bearer",
         "bearerFormat": "lgx_sk_…"
       }
+    },
+    "schemas": {
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "profile"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "space"
+            ]
+          },
+          "models": {
+            "type": "object",
+            "properties": {
+              "default": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "allowed": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "default",
+              "allowed"
+            ],
+            "additionalProperties": false
+          },
+          "connectors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "end_user_identity": {
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "name",
+          "description",
+          "type",
+          "models",
+          "connectors",
+          "end_user_identity",
+          "published_at"
+        ],
+        "additionalProperties": false
+      },
+      "Run": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "run"
+          },
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "artifacts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "version": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "title",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "type": "number"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "index",
+                    "url",
+                    "title"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "tool_calls": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "duration_ms": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "status",
+                    "duration_ms"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "text",
+              "artifacts",
+              "sources",
+              "tool_calls"
+            ],
+            "additionalProperties": false
+          },
+          "required_action": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "interrupt"
+                  },
+                  "interrupt_id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  },
+                  "prompt": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "preview": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tool_name": {
+                    "type": "string"
+                  },
+                  "response_schema": {}
+                },
+                "required": [
+                  "type",
+                  "interrupt_id",
+                  "kind",
+                  "prompt",
+                  "preview",
+                  "tool_name",
+                  "response_schema"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "input_tokens": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "output_tokens": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cost_usd": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "input_tokens",
+                  "output_tokens",
+                  "cost_usd"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "status",
+          "profile_id",
+          "conversation_id",
+          "end_user_id",
+          "model",
+          "created_at",
+          "completed_at",
+          "output",
+          "required_action",
+          "usage",
+          "error",
+          "metadata"
+        ],
+        "additionalProperties": false
+      },
+      "RunEvent": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          },
+          "payload": {},
+          "created_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "type",
+          "payload",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "RunStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "requires_action",
+          "completed",
+          "failed",
+          "canceled",
+          "expired"
+        ]
+      }
     }
   },
   "paths": {
@@ -155,7 +620,7 @@
                       "type": "string"
                     },
                     "status": {
-                      "$ref": "#/$defs/RunStatus"
+                      "$ref": "#/components/schemas/RunStatus"
                     },
                     "profile_id": {
                       "anyOf": [
@@ -469,21 +934,7 @@
                     "error",
                     "metadata"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "RunStatus": {
-                      "type": "string",
-                      "enum": [
-                        "queued",
-                        "running",
-                        "requires_action",
-                        "completed",
-                        "failed",
-                        "canceled",
-                        "expired"
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               },
               "text/event-stream": {
@@ -516,7 +967,7 @@
                       "type": "string"
                     },
                     "status": {
-                      "$ref": "#/$defs/RunStatus"
+                      "$ref": "#/components/schemas/RunStatus"
                     },
                     "profile_id": {
                       "anyOf": [
@@ -830,21 +1281,7 @@
                     "error",
                     "metadata"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "RunStatus": {
-                      "type": "string",
-                      "enum": [
-                        "queued",
-                        "running",
-                        "requires_action",
-                        "completed",
-                        "failed",
-                        "canceled",
-                        "expired"
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }
@@ -1377,7 +1814,7 @@
                       "type": "string"
                     },
                     "status": {
-                      "$ref": "#/$defs/RunStatus"
+                      "$ref": "#/components/schemas/RunStatus"
                     },
                     "profile_id": {
                       "anyOf": [
@@ -1691,21 +2128,7 @@
                     "error",
                     "metadata"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "RunStatus": {
-                      "type": "string",
-                      "enum": [
-                        "queued",
-                        "running",
-                        "requires_action",
-                        "completed",
-                        "failed",
-                        "canceled",
-                        "expired"
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }
@@ -1870,7 +2293,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/$defs/RunEvent"
+                        "$ref": "#/components/schemas/RunEvent"
                       }
                     },
                     "has_more": {
@@ -1883,31 +2306,7 @@
                     "data",
                     "has_more"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "RunEvent": {
-                      "type": "object",
-                      "properties": {
-                        "seq": {
-                          "type": "number"
-                        },
-                        "type": {
-                          "type": "string"
-                        },
-                        "payload": {},
-                        "created_at": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "seq",
-                        "type",
-                        "payload",
-                        "created_at"
-                      ],
-                      "additionalProperties": false
-                    }
-                  }
+                  "additionalProperties": false
                 }
               },
               "text/event-stream": {
@@ -2170,7 +2569,7 @@
                       "type": "string"
                     },
                     "status": {
-                      "$ref": "#/$defs/RunStatus"
+                      "$ref": "#/components/schemas/RunStatus"
                     },
                     "profile_id": {
                       "anyOf": [
@@ -2484,21 +2883,7 @@
                     "error",
                     "metadata"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "RunStatus": {
-                      "type": "string",
-                      "enum": [
-                        "queued",
-                        "running",
-                        "requires_action",
-                        "completed",
-                        "failed",
-                        "canceled",
-                        "expired"
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }
@@ -2685,7 +3070,7 @@
                       "type": "string"
                     },
                     "status": {
-                      "$ref": "#/$defs/RunStatus"
+                      "$ref": "#/components/schemas/RunStatus"
                     },
                     "profile_id": {
                       "anyOf": [
@@ -2999,21 +3384,7 @@
                     "error",
                     "metadata"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "RunStatus": {
-                      "type": "string",
-                      "enum": [
-                        "queued",
-                        "running",
-                        "requires_action",
-                        "completed",
-                        "failed",
-                        "canceled",
-                        "expired"
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }
@@ -3426,7 +3797,7 @@
                     "runs": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/$defs/Run"
+                        "$ref": "#/components/schemas/Run"
                       }
                     }
                   },
@@ -3440,348 +3811,7 @@
                     "last_run_at",
                     "runs"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "Run": {
-                      "type": "object",
-                      "properties": {
-                        "object": {
-                          "type": "string",
-                          "const": "run"
-                        },
-                        "id": {
-                          "type": "string"
-                        },
-                        "status": {
-                          "$ref": "#/$defs/RunStatus"
-                        },
-                        "profile_id": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "conversation_id": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "end_user_id": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "model": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "created_at": {
-                          "type": "string"
-                        },
-                        "completed_at": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "output": {
-                          "type": "object",
-                          "properties": {
-                            "text": {
-                              "type": "string"
-                            },
-                            "artifacts": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "type": {
-                                    "type": "string"
-                                  },
-                                  "title": {
-                                    "anyOf": [
-                                      {
-                                        "type": "string"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ]
-                                  },
-                                  "version": {
-                                    "type": "number"
-                                  }
-                                },
-                                "required": [
-                                  "id",
-                                  "type",
-                                  "title",
-                                  "version"
-                                ],
-                                "additionalProperties": false
-                              }
-                            },
-                            "sources": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "index": {
-                                    "type": "number"
-                                  },
-                                  "url": {
-                                    "type": "string"
-                                  },
-                                  "title": {
-                                    "type": "string"
-                                  }
-                                },
-                                "required": [
-                                  "index",
-                                  "url",
-                                  "title"
-                                ],
-                                "additionalProperties": false
-                              }
-                            },
-                            "tool_calls": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "type": "string"
-                                  },
-                                  "name": {
-                                    "type": "string"
-                                  },
-                                  "status": {
-                                    "type": "string"
-                                  },
-                                  "duration_ms": {
-                                    "anyOf": [
-                                      {
-                                        "type": "number"
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ]
-                                  }
-                                },
-                                "required": [
-                                  "id",
-                                  "name",
-                                  "status",
-                                  "duration_ms"
-                                ],
-                                "additionalProperties": false
-                              }
-                            }
-                          },
-                          "required": [
-                            "text",
-                            "artifacts",
-                            "sources",
-                            "tool_calls"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "required_action": {
-                          "anyOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "type": {
-                                  "type": "string",
-                                  "const": "interrupt"
-                                },
-                                "interrupt_id": {
-                                  "type": "string"
-                                },
-                                "kind": {
-                                  "type": "string"
-                                },
-                                "prompt": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "preview": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "tool_name": {
-                                  "type": "string"
-                                },
-                                "response_schema": {}
-                              },
-                              "required": [
-                                "type",
-                                "interrupt_id",
-                                "kind",
-                                "prompt",
-                                "preview",
-                                "tool_name",
-                                "response_schema"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "usage": {
-                          "anyOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "input_tokens": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "output_tokens": {
-                                  "anyOf": [
-                                    {
-                                      "type": "number"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                },
-                                "cost_usd": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
-                                }
-                              },
-                              "required": [
-                                "input_tokens",
-                                "output_tokens",
-                                "cost_usd"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "error": {
-                          "anyOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "code": {
-                                  "type": "string"
-                                },
-                                "message": {
-                                  "type": "string"
-                                }
-                              },
-                              "required": [
-                                "code",
-                                "message"
-                              ],
-                              "additionalProperties": false
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "metadata": {
-                          "type": "object",
-                          "propertyNames": {
-                            "type": "string"
-                          },
-                          "additionalProperties": {
-                            "type": "string"
-                          }
-                        }
-                      },
-                      "required": [
-                        "object",
-                        "id",
-                        "status",
-                        "profile_id",
-                        "conversation_id",
-                        "end_user_id",
-                        "model",
-                        "created_at",
-                        "completed_at",
-                        "output",
-                        "required_action",
-                        "usage",
-                        "error",
-                        "metadata"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "RunStatus": {
-                      "type": "string",
-                      "enum": [
-                        "queued",
-                        "running",
-                        "requires_action",
-                        "completed",
-                        "failed",
-                        "canceled",
-                        "expired"
-                      ]
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }
@@ -3918,7 +3948,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/$defs/Profile"
+                        "$ref": "#/components/schemas/Profile"
                       }
                     },
                     "has_more": {
@@ -3930,111 +3960,7 @@
                     "data",
                     "has_more"
                   ],
-                  "additionalProperties": false,
-                  "$defs": {
-                    "Profile": {
-                      "type": "object",
-                      "properties": {
-                        "object": {
-                          "type": "string",
-                          "const": "profile"
-                        },
-                        "id": {
-                          "type": "string"
-                        },
-                        "name": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "type": {
-                          "type": "string",
-                          "enum": [
-                            "agent",
-                            "space"
-                          ]
-                        },
-                        "models": {
-                          "type": "object",
-                          "properties": {
-                            "default": {
-                              "anyOf": [
-                                {
-                                  "type": "string"
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            "allowed": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
-                          },
-                          "required": [
-                            "default",
-                            "allowed"
-                          ],
-                          "additionalProperties": false
-                        },
-                        "connectors": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "type": {
-                                "type": "string"
-                              },
-                              "name": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "type",
-                              "name"
-                            ],
-                            "additionalProperties": false
-                          }
-                        },
-                        "end_user_identity": {
-                          "type": "string"
-                        },
-                        "published_at": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "required": [
-                        "object",
-                        "id",
-                        "name",
-                        "description",
-                        "type",
-                        "models",
-                        "connectors",
-                        "end_user_identity",
-                        "published_at"
-                      ],
-                      "additionalProperties": false
-                    }
-                  }
+                  "additionalProperties": false
                 }
               }
             }

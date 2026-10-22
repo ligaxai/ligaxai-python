@@ -49,3 +49,45 @@ event names to models so generated types plug in without touching the parser.
 
 `fastapi.py` is covered by a real ASGI test (`httpx2.ASGITransport`) rather than omitted, so
 the optional helper cannot silently rot.
+
+## 2026-10-22 — The spec is normalised before code generation
+
+**Context.** The platform's generator (Zod `toJSONSchema`, `reused: 'inline'`) writes every
+request and response body inline; datamodel-codegen only names what is in
+`components/schemas`. The first v0.1.0 copy also referenced `#/$defs/...`, which does not
+resolve in an OpenAPI document; the platform fixed that at the source (components +
+`#/components/schemas/X`) and the workaround here was removed.
+
+**Decision.** `scripts/gen_types.py` keeps a small normalisation pass: hoist and name the
+inline bodies (refusing two different bodies under one name), inline bare enums so fields
+are `Literal`s, name nested objects, type integer counts as `int`, open response objects
+(no `extra="forbid"`), drop `propertyNames`, skip error envelopes (they are exceptions, and
+their `request_id` field would collide with `BaseModel.request_id`). `--check` guards drift.
+
+**Consequences.** The generator flags and the normaliser are the only place to change
+generated output; `_generated/` stays untouched by hand.
+
+## 2026-10-22 — Streamed text is folded by offset, in UTF-16 units
+
+**Context.** `text.delta {part_id, offset, text}` is a positional write and engine delivery
+is at-least-once; the platform once shipped an appending client that duplicated text on
+resume. Offsets are UTF-16 code units (JavaScript-native).
+
+**Decision.** `TextAssembler` stores each part as UTF-16-LE bytes, writes at `offset`,
+de-duplicates by `seq`, tracks the contiguous written frontier and emits only new text up
+to it, holding back a trailing high surrogate. Gaps are padded with spaces, matching the
+platform's reducer, so `final_text()` and `run.output.text` agree.
+
+## 2026-10-22 — `AsyncLigaX.runs.stream()` returns an awaitable context manager
+
+**Decision.** `AsyncRunStreamManager` supports both `await client.runs.stream(...)` and
+`async with client.runs.stream(...) as s`, mirroring the sync `with` form without an
+`await` inside `async with`. The method name and parameters match the sync client.
+
+## 2026-10-22 — `run_stream_route` re-encodes frames as `RunEvent`
+
+**Decision.** The FastAPI proxy starts the run before responding (refusals become plain
+HTTP errors) and relays `RunEvent`-shaped frames (`type, seq, payload, run_id, ts`) rather
+than raw engine frames, which carry the engine's internal run references. The profile and
+model are fixed server-side; the end user comes from a resolver over the request, never
+the body.

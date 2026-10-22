@@ -289,6 +289,12 @@ def generate(out: Path) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         normalised = Path(tmp) / "openapi.json"
         normalised.write_text(json.dumps(normalise(spec), indent=2), encoding="utf-8")
+        # Always generate into the temporary directory, never at `out`: the generator's
+        # builtin formatter (black) reads the line length from the nearest pyproject.toml, so
+        # writing beside the repo's (100) and writing to a temp dir (black's 88) split a
+        # 90-column line differently — and ruff then keeps that split's magic trailing comma.
+        # One location for both modes keeps `make gen-types` and `--check` byte-identical.
+        raw = Path(tmp) / "models.py"
         cmd = [
             sys.executable,
             "-m",
@@ -298,7 +304,7 @@ def generate(out: Path) -> None:
             "--input-file-type",
             "openapi",
             "--output",
-            str(out),
+            str(raw),
             "--output-model-type",
             "pydantic_v2.BaseModel",
             "--base-class",
@@ -320,7 +326,7 @@ def generate(out: Path) -> None:
         if proc.returncode != 0:
             print(proc.stdout, proc.stderr, sep="\n")
             raise SystemExit(f"gen_types: datamodel-codegen failed ({proc.returncode})")
-    body = out.read_text(encoding="utf-8")
+        body = raw.read_text(encoding="utf-8")
     if not body.startswith(HEADER):
         body = HEADER + body
     # Format as if the file sat at its real path, so `--check` (which writes to a temporary

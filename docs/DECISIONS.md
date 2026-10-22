@@ -91,3 +91,17 @@ HTTP errors) and relays `RunEvent`-shaped frames (`type, seq, payload, run_id, t
 than raw engine frames, which carry the engine's internal run references. The profile and
 model are fixed server-side; the end user comes from a resolver over the request, never
 the body.
+
+## 2026-10-22 — `webhooks.verify()` returns a typed event; unknown types do not fail
+
+**Context.** The spec's top-level `webhooks` section (OpenAPI 3.1) declares the events the
+server sends, but datamodel-codegen reads only `paths` and `components`.
+
+**Decision.** `gen_types.py` hoists those request bodies into components, so
+`RunWebhookEvent`, `ApiKeyLimitWebhookEvent` and `WebhookTestEvent` are generated and
+drift-checked like every response. `verify()` (= `verify_signature()` + `parse_event()`)
+dispatches on `type`; an unrecognised `type` becomes the hand-written
+`UnknownWebhookEvent` rather than an error, because a receiver that 4xx's a new event
+type makes the server retry it for 27 hours. A known type missing a required field still
+raises — that is contract drift worth seeing. A malformed `webhook-signature` (no `v1,`,
+bad base64) is a `WebhookVerificationError`, never a bare `ValueError`.

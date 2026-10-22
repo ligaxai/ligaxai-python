@@ -10,9 +10,14 @@ Last updated: 2026-10-22
 | Bootstrap to a real SDK   | implemented | `ligaxai` / `LigaX` / `LIGAX_*`                                         |
 | Spec pin + codegen        | implemented | `public-api-spec-v0.1.0` copied from the platform repo; drift-checked   |
 | Agent API v0.1 resources  | implemented | branch `feat/agent-api-v0.1` (local, unpushed); gates green             |
+| Webhook endpoints + events | implemented | `feat/agent-api-v0.1` (local); spec re-pinned with `/webhooks` + `webhooks` section |
 | First PyPI release        | planned     | needs pending trusted publisher + `pypi` environment on GitHub          |
 
 ## Team activity
+
+- 2026-10-22 — webhooks: `client.webhooks.*` (create/list/get/update/delete/test), typed
+  `webhooks.verify()` generated from the spec's `webhooks` section, FastAPI
+  `webhook_dependency`; 201 tests.
 
 - 2026-10-22 — Agent API v0.1 on `feat/agent-api-v0.1`: runs (create/wait/stream/get/
   events/follow_events/cancel/resolve_interrupt), conversations, profiles, keys, usage;
@@ -29,7 +34,12 @@ Last updated: 2026-10-22
   from `ligax-enterprise/docs/public-api/spec/openapi.json`.
 - Enum fields (`run.status`, `profile.type`, …) are `Literal`s: a value the server adds
   later fails validation until the spec and SDK are bumped.
-- 409 is still retried by the shared policy; none of the API's 409s are transient.
+- 409 is still retried by the shared policy; none of the API's 409s are transient
+  (`webhook_endpoint_limit`, `webhook_endpoint_disabled` included) unless the server sends
+  `x-should-retry: false`.
+- `webhooks.create` is retried on 5xx / transport errors like any POST, but the platform
+  does not honour `Idempotency-Key` on `POST /webhooks`: a retried create can leave a
+  duplicate endpoint whose secret was never seen.
 
 - No `with_raw_response` / `with_streaming_response` accessors yet (in the research brief,
   deferred until a real resource needs them).

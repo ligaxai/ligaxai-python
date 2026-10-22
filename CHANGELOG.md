@@ -26,9 +26,21 @@ All notable changes to this project are documented here. The format follows
   `openapi/openapi.json`.
 - Conformance cases for `runs.create`, `runs.get` and a non-retried `402`; the harness
   can assert a request count (`expect.requests`).
+- **Webhook endpoints** (scope `webhooks:manage`) on both clients:
+  `webhooks.create(url=, event_types=, description=, profile_ids=)` (returns the signing
+  `secret` once), `list`, `get`, `update` (only the fields given are sent), `delete`,
+  `test` (→ `WebhookDelivery`).
+- Typed webhook events, generated from the spec's top-level `webhooks` section:
+  `RunWebhookEvent` (`run.completed` / `failed` / `canceled` / `requires_action`),
+  `ApiKeyLimitWebhookEvent`, `WebhookTestEvent`; `UnknownWebhookEvent` for a type added
+  later. `webhooks.verify_signature()` and `webhooks.parse_event()`.
+- `ligaxai.fastapi.webhook_dependency(secret)`: verifies a request's raw body and yields the
+  typed event, or answers `400`.
 
 ### Changed
 
+- `webhooks.verify()` returns a typed event (dispatched on `type`) instead of the parsed
+  JSON, and reports a malformed signature header as `WebhookVerificationError`.
 - 422 is never retried (with 402 and 403), matching the TypeScript SDK.
 - `examples/fastapi-app` is a working sample: `/me`, `/ask` (`runs.wait`), `/chat`
   (`run_stream_route`) and a one-file streaming chat page.

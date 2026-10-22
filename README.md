@@ -114,6 +114,11 @@ async client, `await` it; `runs.stream` / `runs.follow_events` can also be used 
 | `profiles.list()` / `profiles.get(profile_id)` | `GET /profiles[/{id}]` | `ProfileList` / `Profile` |
 | `keys.self()` | `GET /keys/self` | `ApiKey` |
 | `usage.get(start=, end=, group_by=)` | `GET /usage` | `UsageReport` |
+| `webhooks.create(url=, event_types=, description=, profile_ids=)` | `POST /webhooks` | `WebhookEndpointWithSecret` |
+| `webhooks.list()` / `webhooks.get(webhook_id)` | `GET /webhooks[/{id}]` | `WebhookEndpointList` / `WebhookEndpoint` |
+| `webhooks.update(webhook_id, url=, description=, event_types=, profile_ids=, status=)` | `PATCH /webhooks/{id}` | `WebhookEndpoint` |
+| `webhooks.delete(webhook_id)` | `DELETE /webhooks/{id}` | `WebhookEndpointDeleted` |
+| `webhooks.test(webhook_id)` | `POST /webhooks/{id}/test` | `WebhookDelivery` |
 
 Types live in `ligaxai.types`. Fields are snake_case, exactly as on the wire. Every model
 keeps fields the server adds later (`model.model_extra`) and carries `.request_id`.
@@ -211,18 +216,104 @@ logger. `Authorization` values are redacted before they reach any handler.
 
 ## Webhooks
 
-```python
-from ligaxai import WebhookVerificationError, webhooks
+LigaX can `POST` an event to your server when a run finishes, fails, is canceled or waits
+on you, and when a key reaches its spend limit — instead of you polling `runs.get`.
+Managing endpoints needs a key with the `webhooks:manage` scope (or use Settings →
+Developers).
 
-try:
-    event = webhooks.verify(request.body, request.headers, secret=WEBHOOK_SECRET)
-except WebhookVerificationError:
-    return 400
+### Create an endpoint and store the secret
+
+```python
+from ligaxai import LigaX
+
+client = LigaX()
+endpoint = client.webhooks.create(
+    url="https://example.com/hooks/ligax",
+    event_types=["run.completed", "run.failed", "run.requires_action"],
+    profile_ids=["prf_..."],          # optional: only these profiles' runs
+)
+save_secret(endpoint.id, endpoint.secret)   # whsec_… — returned once, never again
+client.webhooks.test(endpoint.id)           # sends a webhook.test event now
 ```
 
-Follows the [Standard Webhooks](https://www.standardwebhooks.com) spec
-(`webhook-id`, `webhook-timestamp`, `webhook-signature`). Verify the **raw** body bytes.
-The v0.1 Agent API does not send webhooks yet; the verifier is ready for when it does.
+Events: `run.completed`, `run.failed`, `run.canceled`, `run.requires_action`,
+`api_key.limit_reached` (plus `webhook.test`, sent only by `webhooks.test`).
+`webhooks.update(id, status="disabled")` pauses an endpoint; an endpoint that keeps failing
+for five days is disabled by the server (`disabled_reason == "failing"`) and re-enabled
+with `status="active"`. Store the secret like any credential — in your secret manager,
+not in code.
+
+### Verify and handle a delivery
+
+Deliveries follow [Standard Webhooks](https://www.standardwebhooks.com) (`webhook-id`,
+`webhook-timestamp`, `webhook-signature`). `webhooks.verify` checks the signature and the
+five-minute timestamp window, then returns a typed event:
+
+```python
+from ligaxai import WebhookVerificationError, webhooks
+from ligaxai.types import ApiKeyLimitWebhookEvent, RunWebhookEvent
+
+try:
+    event = webhooks.verify(raw_body, request_headers, secret=WEBHOOK_SECRET)
+except WebhookVerificationError:
+    return 400
+
+if isinstance(event, RunWebhookEvent) and event.type == "run.completed":
+    run = client.runs.get(event.data.id)    # payloads are thin: fetch the answer
+elif isinstance(event, ApiKeyLimitWebhookEvent):
+    alert(event.data.name, event.data.limit_usd)
+```
+
+The event types are `RunWebhookEvent` (`type` is one of the four `run.*` values; `data`
+carries `id`, `status`, `profile_id`, `conversation_id`, `end_user_id`, `metadata`, and
+`error_code` / `interrupt_id` / `interrupt_kind` when they apply),
+`ApiKeyLimitWebhookEvent`, `WebhookTestEvent`, and `UnknownWebhookEvent` for a type added
+after your SDK version — answer 2xx and ignore it. `webhooks.verify_signature()` and
+`webhooks.parse_event()` are the two halves, if you want the body some other way.
+
+In FastAPI, `webhook_dependency` reads the raw body for you and answers `400` on a bad
+signature:
+
+```python
+from fastapi import BackgroundTasks, Depends, FastAPI, Header
+from ligaxai.fastapi import webhook_dependency
+from ligaxai.types import WebhookEvent
+
+app = FastAPI()
+verified = webhook_dependency(lambda: settings.ligax_webhook_secret)
+
+@app.post("/hooks/ligax", status_code=204)
+async def ligax_hook(
+    background: BackgroundTasks,
+    event: WebhookEvent = Depends(verified),
+    webhook_id: str = Header(),
+) -> None:
+    background.add_task(handle, webhook_id, event)
+```
+
+Rules that keep a receiver correct:
+
+- **Verify the raw bytes.** Never verify `json.dumps(await request.json())` — any
+  re-serialisation changes what was signed.
+- **Answer 2xx fast.** The server waits 15 s; anything else (including a redirect) is a
+  failure and is retried for about 27 hours (5 s, 5 min, 30 min, 2 h, 5 h, 10 h, 10 h).
+  Queue the work and return.
+- **Dedupe on `webhook-id`.** Delivery is at-least-once; a retry carries the same id.
+  Record ids you have processed and skip repeats.
+- **Fetch, don't trust the payload for content.** `data` identifies the object and never
+  carries the answer; read it with `runs.get` using your key.
+- **Rotation.** During a secret rotation a delivery carries two signatures; `verify`
+  accepts either secret.
+
+### Zapier, Make and n8n
+
+`POST /webhooks` and `DELETE /webhooks/{id}` are the REST-Hooks subscribe / unsubscribe
+pair these tools expect. In a custom integration, the trigger's *subscribe* step calls
+`POST /webhooks` with the tool's catch URL and the events it wants, and keeps the returned
+`id`; *unsubscribe* calls `DELETE /webhooks/{id}` when the workflow is switched off. Use a
+key with only the `webhooks:manage` scope (plus `runs:read` if the workflow fetches the
+run). Payloads are thin by design, so a tool's task history holds ids and a status, never a
+transcript.
 
 ## FastAPI
 

@@ -105,12 +105,20 @@ def _rewrite_refs(node: Any) -> Any:
 
 
 def _open_objects(node: Any) -> Any:
-    """Drop ``additionalProperties: false`` everywhere (see module docstring)."""
+    """Drop ``additionalProperties: false`` everywhere (see module docstring).
+
+    Also drops a typed catchall on an object that declares ``properties`` (Zod's
+    ``.catchall()``, e.g. a usage bucket's per-group columns). ``BaseModel`` already keeps
+    unknown fields, and the generator's rendering of a typed catchall — an un-annotated
+    ``model_config`` plus an ``__annotations__`` override — is ambiguous to
+    ``pyright --verifytypes``. A catchall on a pure map (``metadata``) is kept.
+    """
     if isinstance(node, dict):
+        has_props = "properties" in node
         return {
             k: _open_objects(v)
             for k, v in node.items()
-            if not (k == "additionalProperties" and v is False)
+            if not (k == "additionalProperties" and (v is False or has_props))
         }
     if isinstance(node, list):
         return [_open_objects(v) for v in node]

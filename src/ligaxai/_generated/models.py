@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 from ligaxai._models import BaseModel
 from pydantic import ConfigDict, Field, RootModel
@@ -122,12 +122,6 @@ class ApiKeyLimit(BaseModel):
 
 
 class UsageBucket(BaseModel):
-    model_config = ConfigDict(
-        extra="allow",
-    )
-    __annotations__ = {
-        "__pydantic_extra__": Dict[str, str | None],
-    }
     start: str
     model_calls: int
     input_tokens: int

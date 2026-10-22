@@ -17,6 +17,28 @@ class RunEvent(BaseModel):
     created_at: str
 
 
+class WebhookEndpoint(BaseModel):
+    object: Literal["webhook_endpoint"]
+    id: str
+    url: str
+    description: str
+    event_types: list[
+        Literal[
+            "run.completed",
+            "run.failed",
+            "run.canceled",
+            "run.requires_action",
+            "api_key.limit_reached",
+        ]
+    ]
+    profile_ids: list[str]
+    status: Literal["active", "disabled"]
+    disabled_reason: Literal["manual", "failing"] | None
+    secret_hint: str
+    created_at: str
+    updated_at: str
+
+
 class Input(RootModel[str]):
     root: str = Field(..., max_length=100000, min_length=1)
 
@@ -60,6 +82,102 @@ class InterruptResolution(BaseModel):
     )
     decision: Literal["approve", "reject", "answer"]
     payload: dict[str, Any] | None = None
+
+
+class WebhookEndpointList(BaseModel):
+    object: Literal["list"]
+    data: list[WebhookEndpoint]
+    has_more: bool
+
+
+class ProfileId(RootModel[str]):
+    root: str = Field(..., pattern="^prf_[0-9A-Za-z]{20}$")
+
+
+class WebhookEndpointCreateRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    url: str = Field(..., max_length=2048, min_length=1)
+    description: str | None = Field(None, max_length=200)
+    event_types: list[
+        Literal[
+            "run.completed",
+            "run.failed",
+            "run.canceled",
+            "run.requires_action",
+            "api_key.limit_reached",
+        ]
+    ] = Field(..., min_length=1)
+    profile_ids: list[ProfileId] | None = Field(None, max_length=50)
+
+
+class WebhookEndpointWithSecret(BaseModel):
+    object: Literal["webhook_endpoint"]
+    id: str
+    url: str
+    description: str
+    event_types: list[
+        Literal[
+            "run.completed",
+            "run.failed",
+            "run.canceled",
+            "run.requires_action",
+            "api_key.limit_reached",
+        ]
+    ]
+    profile_ids: list[str]
+    status: Literal["active", "disabled"]
+    disabled_reason: Literal["manual", "failing"] | None
+    secret_hint: str
+    created_at: str
+    updated_at: str
+    secret: str = Field(
+        ..., description="The signing secret (`whsec_…`). Returned once; store it now."
+    )
+
+
+class WebhookEndpointUpdateRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    url: str | None = Field(None, max_length=2048, min_length=1)
+    description: str | None = Field(None, max_length=200)
+    event_types: (
+        list[
+            Literal[
+                "run.completed",
+                "run.failed",
+                "run.canceled",
+                "run.requires_action",
+                "api_key.limit_reached",
+            ]
+        ]
+        | None
+    ) = Field(None, min_length=1)
+    profile_ids: list[ProfileId] | None = Field(None, max_length=50)
+    status: Literal["active", "disabled"] | None = None
+
+
+class WebhookEndpointDeleted(BaseModel):
+    object: Literal["webhook_endpoint"]
+    id: str
+    deleted: Literal[True]
+
+
+class WebhookDelivery(BaseModel):
+    object: Literal["webhook_delivery"]
+    id: str
+    event_id: str
+    event_type: str
+    status: Literal["pending", "succeeded", "failed"]
+    attempt: int
+    last_status_code: int | None
+    last_error: str | None
+    last_attempt_at: str | None
+    next_attempt_at: str | None
+    delivered_at: str | None
+    created_at: str
 
 
 class RequiredAction(BaseModel):
@@ -129,6 +247,30 @@ class UsageBucket(BaseModel):
     cost_usd: str | None
 
 
+class RunWebhookEventData(BaseModel):
+    object: Literal["run"]
+    id: str
+    status: str
+    profile_id: str | None
+    conversation_id: str | None
+    end_user_id: str | None
+    metadata: dict[str, str]
+    error_code: str | None = None
+    interrupt_id: str | None = None
+    interrupt_kind: str | None = None
+
+
+class ApiKeyLimitWebhookEventData(BaseModel):
+    object: Literal["api_key"]
+    id: str
+    name: str
+    hint: str
+    spent_usd: str | None
+    limit_usd: str | None
+    limit_reset: str
+    resets_at: str | None
+
+
 class Profile(BaseModel):
     object: Literal["profile"]
     id: str
@@ -139,6 +281,18 @@ class Profile(BaseModel):
     connectors: list[ProfileConnector]
     end_user_identity: str
     published_at: str | None
+
+
+class RunWebhookEvent(BaseModel):
+    type: Literal["run.completed", "run.failed", "run.canceled", "run.requires_action"]
+    timestamp: str
+    data: RunWebhookEventData
+
+
+class ApiKeyLimitWebhookEvent(BaseModel):
+    type: Literal["api_key.limit_reached"]
+    timestamp: str
+    data: ApiKeyLimitWebhookEventData
 
 
 class ProfileList(BaseModel):

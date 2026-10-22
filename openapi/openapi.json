@@ -486,6 +486,648 @@
           "canceled",
           "expired"
         ]
+      },
+      "WebhookEndpoint": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "webhook_endpoint"
+          },
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "event_types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "run.completed",
+                "run.failed",
+                "run.canceled",
+                "run.requires_action",
+                "api_key.limit_reached"
+              ]
+            }
+          },
+          "profile_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ]
+          },
+          "disabled_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "manual",
+                  "failing"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "secret_hint": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "url",
+          "description",
+          "event_types",
+          "profile_ids",
+          "status",
+          "disabled_reason",
+          "secret_hint",
+          "created_at",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "webhooks": {
+    "run.completed": {
+      "post": {
+        "operationId": "events.run.completed",
+        "summary": "A run finished with an answer",
+        "description": "Signed per Standard Webhooks: verify webhook-signature over webhook-id.webhook-timestamp.body with the endpoint secret before trusting the body. Answer 2xx within 15 s; anything else is retried.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "run.completed",
+                      "run.failed",
+                      "run.canceled",
+                      "run.requires_action"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "const": "run"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "profile_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "conversation_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "end_user_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "error_code": {
+                        "type": "string"
+                      },
+                      "interrupt_id": {
+                        "type": "string"
+                      },
+                      "interrupt_kind": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "id",
+                      "status",
+                      "profile_id",
+                      "conversation_id",
+                      "end_user_id",
+                      "metadata"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "run.failed": {
+      "post": {
+        "operationId": "events.run.failed",
+        "summary": "A run failed",
+        "description": "Signed per Standard Webhooks: verify webhook-signature over webhook-id.webhook-timestamp.body with the endpoint secret before trusting the body. Answer 2xx within 15 s; anything else is retried.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "run.completed",
+                      "run.failed",
+                      "run.canceled",
+                      "run.requires_action"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "const": "run"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "profile_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "conversation_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "end_user_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "error_code": {
+                        "type": "string"
+                      },
+                      "interrupt_id": {
+                        "type": "string"
+                      },
+                      "interrupt_kind": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "id",
+                      "status",
+                      "profile_id",
+                      "conversation_id",
+                      "end_user_id",
+                      "metadata"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "run.canceled": {
+      "post": {
+        "operationId": "events.run.canceled",
+        "summary": "A run was canceled",
+        "description": "Signed per Standard Webhooks: verify webhook-signature over webhook-id.webhook-timestamp.body with the endpoint secret before trusting the body. Answer 2xx within 15 s; anything else is retried.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "run.completed",
+                      "run.failed",
+                      "run.canceled",
+                      "run.requires_action"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "const": "run"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "profile_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "conversation_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "end_user_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "error_code": {
+                        "type": "string"
+                      },
+                      "interrupt_id": {
+                        "type": "string"
+                      },
+                      "interrupt_kind": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "id",
+                      "status",
+                      "profile_id",
+                      "conversation_id",
+                      "end_user_id",
+                      "metadata"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "run.requires_action": {
+      "post": {
+        "operationId": "events.run.requires_action",
+        "summary": "A run is waiting for an approval or an answer",
+        "description": "Signed per Standard Webhooks: verify webhook-signature over webhook-id.webhook-timestamp.body with the endpoint secret before trusting the body. Answer 2xx within 15 s; anything else is retried.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "run.completed",
+                      "run.failed",
+                      "run.canceled",
+                      "run.requires_action"
+                    ]
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "const": "run"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string"
+                      },
+                      "profile_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "conversation_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "end_user_id": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "error_code": {
+                        "type": "string"
+                      },
+                      "interrupt_id": {
+                        "type": "string"
+                      },
+                      "interrupt_kind": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "id",
+                      "status",
+                      "profile_id",
+                      "conversation_id",
+                      "end_user_id",
+                      "metadata"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "api_key.limit_reached": {
+      "post": {
+        "operationId": "events.api_key.limit_reached",
+        "summary": "An API key reached its spend limit for the window",
+        "description": "Signed per Standard Webhooks: verify webhook-signature over webhook-id.webhook-timestamp.body with the endpoint secret before trusting the body. Answer 2xx within 15 s; anything else is retried.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "const": "api_key.limit_reached"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "object": {
+                        "type": "string",
+                        "const": "api_key"
+                      },
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "hint": {
+                        "type": "string"
+                      },
+                      "spent_usd": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "limit_usd": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "limit_reset": {
+                        "type": "string"
+                      },
+                      "resets_at": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "object",
+                      "id",
+                      "name",
+                      "hint",
+                      "spent_usd",
+                      "limit_usd",
+                      "limit_reset",
+                      "resets_at"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "timestamp",
+                  "data"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted"
+          }
+        }
       }
     }
   },
@@ -4203,6 +4845,1830 @@
             }
           },
           "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "operationId": "webhooks.list",
+        "summary": "List webhook endpoints (scope webhooks:manage)",
+        "responses": {
+          "200": {
+            "description": "Endpoints",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEndpoint"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "data",
+                    "has_more"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "webhooks.create",
+        "summary": "Create a webhook endpoint; the signing secret is returned once",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "event_types": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "run.completed",
+                        "run.failed",
+                        "run.canceled",
+                        "run.requires_action",
+                        "api_key.limit_reached"
+                      ]
+                    }
+                  },
+                  "profile_ids": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^prf_[0-9A-Za-z]{20}$"
+                    }
+                  }
+                },
+                "required": [
+                  "url",
+                  "event_types"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The endpoint and its secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "webhook_endpoint"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "event_types": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "run.completed",
+                          "run.failed",
+                          "run.canceled",
+                          "run.requires_action",
+                          "api_key.limit_reached"
+                        ]
+                      }
+                    },
+                    "profile_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "disabled"
+                      ]
+                    },
+                    "disabled_reason": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "manual",
+                            "failing"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "secret_hint": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    },
+                    "secret": {
+                      "type": "string",
+                      "description": "The signing secret (`whsec_…`). Returned once; store it now."
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "url",
+                    "description",
+                    "event_types",
+                    "profile_ids",
+                    "status",
+                    "disabled_reason",
+                    "secret_hint",
+                    "created_at",
+                    "updated_at",
+                    "secret"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/{id}": {
+      "get": {
+        "operationId": "webhooks.get",
+        "summary": "Read one webhook endpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "webhook_endpoint"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "event_types": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "run.completed",
+                          "run.failed",
+                          "run.canceled",
+                          "run.requires_action",
+                          "api_key.limit_reached"
+                        ]
+                      }
+                    },
+                    "profile_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "disabled"
+                      ]
+                    },
+                    "disabled_reason": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "manual",
+                            "failing"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "secret_hint": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "url",
+                    "description",
+                    "event_types",
+                    "profile_ids",
+                    "status",
+                    "disabled_reason",
+                    "secret_hint",
+                    "created_at",
+                    "updated_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "webhooks.update",
+        "summary": "Change, enable or disable a webhook endpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "event_types": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "run.completed",
+                        "run.failed",
+                        "run.canceled",
+                        "run.requires_action",
+                        "api_key.limit_reached"
+                      ]
+                    }
+                  },
+                  "profile_ids": {
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^prf_[0-9A-Za-z]{20}$"
+                    }
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "disabled"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The endpoint",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "webhook_endpoint"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "event_types": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "run.completed",
+                          "run.failed",
+                          "run.canceled",
+                          "run.requires_action",
+                          "api_key.limit_reached"
+                        ]
+                      }
+                    },
+                    "profile_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "active",
+                        "disabled"
+                      ]
+                    },
+                    "disabled_reason": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "manual",
+                            "failing"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "secret_hint": {
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "type": "string"
+                    },
+                    "updated_at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "url",
+                    "description",
+                    "event_types",
+                    "profile_ids",
+                    "status",
+                    "disabled_reason",
+                    "secret_hint",
+                    "created_at",
+                    "updated_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "webhooks.delete",
+        "summary": "Delete a webhook endpoint (unsubscribe)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "webhook_endpoint"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "deleted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/{id}/test": {
+      "post": {
+        "operationId": "webhooks.test",
+        "summary": "Send a webhook.test event now and report the delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The delivery",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "webhook_delivery"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "event_id": {
+                      "type": "string"
+                    },
+                    "event_type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "succeeded",
+                        "failed"
+                      ]
+                    },
+                    "attempt": {
+                      "type": "integer"
+                    },
+                    "last_status_code": {
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "last_error": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "last_attempt_at": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "next_attempt_at": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "delivered_at": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "created_at": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "id",
+                    "event_id",
+                    "event_type",
+                    "status",
+                    "attempt",
+                    "last_status_code",
+                    "last_error",
+                    "last_attempt_at",
+                    "next_attempt_at",
+                    "delivered_at",
+                    "created_at"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "invalid_request_error",
+                            "authentication_error",
+                            "permission_error",
+                            "not_found_error",
+                            "rate_limit_error",
+                            "billing_error",
+                            "conflict_error",
+                            "api_error"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Stable, machine-readable reason, e.g. key_limit_reached."
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "A sentence written for the developer."
+                        },
+                        "request_id": {
+                          "type": "string"
+                        },
+                        "param": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "code",
+                        "message",
+                        "request_id"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
             "description": "Error",
             "content": {
               "application/json": {

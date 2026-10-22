@@ -15,6 +15,9 @@ components. ``normalise`` therefore:
 * hoists each inline body into ``components/schemas`` under a stable name
   (``SCHEMA_NAMES``), refusing two different bodies under one name — so the four inline
   copies of a run must agree with ``components/schemas/Run``;
+* hoists the event bodies of the top-level ``webhooks`` section (what the server sends to
+  a receiver), which the generator would otherwise ignore — ``RunWebhookEvent`` and
+  ``ApiKeyLimitWebhookEvent``;
 * inlines bare enum components (``RunStatus``), so ``run.status`` is a ``Literal`` and
   ``run.status == "completed"`` holds — as a component it would be a ``RootModel``;
 * names nested objects (``NESTED_NAMES``) so they do not collide (``Usage`` / ``Usage1``);
@@ -58,6 +61,21 @@ SCHEMA_NAMES: dict[tuple[str, str], str] = {
     ("profiles.get", "200"): "Profile",
     ("keys.self", "200"): "ApiKey",
     ("usage.get", "200"): "UsageReport",
+    ("webhooks.list", "200"): "WebhookEndpointList",
+    ("webhooks.create", "request"): "WebhookEndpointCreateRequest",
+    ("webhooks.create", "201"): "WebhookEndpointWithSecret",
+    ("webhooks.get", "200"): "WebhookEndpoint",
+    ("webhooks.update", "request"): "WebhookEndpointUpdateRequest",
+    ("webhooks.update", "200"): "WebhookEndpoint",
+    ("webhooks.delete", "200"): "WebhookEndpointDeleted",
+    ("webhooks.test", "200"): "WebhookDelivery",
+    # Outgoing events (the spec's top-level `webhooks`, keyed by operationId). The four
+    # `run.*` events share one body, so they must agree to share one name.
+    ("events.run.completed", "request"): "RunWebhookEvent",
+    ("events.run.failed", "request"): "RunWebhookEvent",
+    ("events.run.canceled", "request"): "RunWebhookEvent",
+    ("events.run.requires_action", "request"): "RunWebhookEvent",
+    ("events.api_key.limit_reached", "request"): "ApiKeyLimitWebhookEvent",
 }
 
 # Nested objects worth a public name: (component, property) -> new component. Without this
@@ -76,6 +94,8 @@ NESTED_NAMES: list[tuple[str, str, str]] = [
     ("Profile", "connectors", "ProfileConnector"),
     ("ApiKey", "limit", "ApiKeyLimit"),
     ("UsageReport", "data", "UsageBucket"),
+    ("RunWebhookEvent", "data", "RunWebhookEventData"),
+    ("ApiKeyLimitWebhookEvent", "data", "ApiKeyLimitWebhookEventData"),
 ]
 
 # Counts the platform declares as `z.number()` (JSON Schema "number") that are integers by
@@ -222,6 +242,19 @@ def normalise(spec: dict[str, Any]) -> dict[str, Any]:
             raise SystemExit(f"gen_types: two different schemas want the name {name!r}")
         schemas[name] = body
         return {"$ref": f"{COMPONENT_REF}{name}"}
+
+    # The top-level `webhooks` section (OpenAPI 3.1) describes what the server *sends*.
+    # datamodel-codegen reads only `paths` and `components`, so its request bodies are
+    # hoisted here like any other — and as response shapes, because the SDK parses them
+    # (a receiver must keep working when the server adds a field).
+    for path_item in doc.get("webhooks", {}).values():
+        for op in path_item.values():
+            if not isinstance(op, dict) or "operationId" not in op:
+                continue
+            media = ((op.get("requestBody") or {}).get("content") or {}).get("application/json")
+            if media and "schema" in media:
+                name = SCHEMA_NAMES.get((op["operationId"], "request"), _pascal(op["operationId"]))
+                media["schema"] = register(name, media["schema"], response=True)
 
     for path_item in doc.get("paths", {}).values():
         for op in path_item.values():

@@ -14,6 +14,8 @@ the ``webhook-id`` header, and answer 2xx within 15 s (do the work afterwards).
 """
 
 from ._webhooks import (
+    ConnectionCreatedWebhookEvent,
+    ConnectionDeletedWebhookEvent,
     UnknownWebhookEvent,
     WebhookEvent,
     WebhookTestEvent,
@@ -23,6 +25,8 @@ from ._webhooks import (
 )
 
 __all__ = [
+    "ConnectionCreatedWebhookEvent",
+    "ConnectionDeletedWebhookEvent",
     "UnknownWebhookEvent",
     "WebhookEvent",
     "WebhookTestEvent",

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
-from typing import Any, TypeAlias, cast
+from typing import Any, Literal, TypeAlias, cast
 
 from pydantic import Field
 from standardwebhooks import Webhook
@@ -30,6 +30,10 @@ from ._generated.models import (
 from ._models import BaseModel
 
 __all__ = [
+    "ConnectionCreatedWebhookEvent",
+    "ConnectionCreatedWebhookEventData",
+    "ConnectionDeletedWebhookEvent",
+    "ConnectionDeletedWebhookEventData",
     "UnknownWebhookEvent",
     "WebhookEvent",
     "WebhookTestEvent",
@@ -52,10 +56,54 @@ class UnknownWebhookEvent(BaseModel):
     data: dict[str, Any] = Field(default_factory=dict)
 
 
+# The `connection.*` events are hand-written: the platform sends them (spec 0.3.0 accepts
+# them in `event_types`) but its spec's top-level `webhooks` section does not describe their
+# bodies yet, so the generator has nothing to read. Shapes follow `end-user-connections.ts`.
+# Move them to `SCHEMA_NAMES` in `scripts/gen_types.py` once the spec carries them.
+
+
+class ConnectionCreatedWebhookEventData(BaseModel):
+    """The connection an end user just made — ids and a status, never the credential."""
+
+    object: Literal["connection"]
+    id: str
+    end_user_id: str
+    status: str
+
+
+class ConnectionCreatedWebhookEvent(BaseModel):
+    """``connection.created``: an end user's connect session was first seen to succeed.
+    ``end_users.connections.list(event.data.end_user_id)`` has the details."""
+
+    type: Literal["connection.created"]
+    timestamp: str
+    data: ConnectionCreatedWebhookEventData
+
+
+class ConnectionDeletedWebhookEventData(BaseModel):
+    object: Literal["connection"]
+    id: str
+    connector_key: str
+    end_user_id: str
+
+
+class ConnectionDeletedWebhookEvent(BaseModel):
+    """``connection.deleted``: an end user's own account was disconnected through the API."""
+
+    type: Literal["connection.deleted"]
+    timestamp: str
+    data: ConnectionDeletedWebhookEventData
+
+
 #: Every event ``verify`` can return. Narrow with ``isinstance`` (or ``match``); ``type``
 #: tells the four ``run.*`` events apart.
 WebhookEvent: TypeAlias = (
-    RunWebhookEvent | ApiKeyLimitWebhookEvent | WebhookTestEvent | UnknownWebhookEvent
+    RunWebhookEvent
+    | ApiKeyLimitWebhookEvent
+    | ConnectionCreatedWebhookEvent
+    | ConnectionDeletedWebhookEvent
+    | WebhookTestEvent
+    | UnknownWebhookEvent
 )
 
 
@@ -77,6 +125,10 @@ def parse_event(payload: bytes | str | Mapping[str, Any]) -> WebhookEvent:
         return RunWebhookEvent.model_validate(body)
     if kind == "api_key.limit_reached":
         return ApiKeyLimitWebhookEvent.model_validate(body)
+    if kind == "connection.created":
+        return ConnectionCreatedWebhookEvent.model_validate(body)
+    if kind == "connection.deleted":
+        return ConnectionDeletedWebhookEvent.model_validate(body)
     if kind == "webhook.test":
         return WebhookTestEvent.model_validate(body)
     if isinstance(kind, str):

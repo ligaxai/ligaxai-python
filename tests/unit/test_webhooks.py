@@ -12,6 +12,8 @@ from standardwebhooks import Webhook
 from ligaxai import WebhookVerificationError, webhooks
 from ligaxai.types import (
     ApiKeyLimitWebhookEvent,
+    ConnectionCreatedWebhookEvent,
+    ConnectionDeletedWebhookEvent,
     RunWebhookEvent,
     UnknownWebhookEvent,
     WebhookTestEvent,
@@ -182,6 +184,59 @@ def test_webhook_test_event() -> None:
     }
     event = webhooks.parse_event(body)
     assert isinstance(event, WebhookTestEvent) and event.data.id.startswith("we_")
+
+
+def test_connection_created_event() -> None:
+    raw = json.dumps(
+        {
+            "type": "connection.created",
+            "timestamp": "2026-10-22T08:00:00.000Z",
+            "data": {
+                "object": "connection",
+                "id": "conn_1",
+                "end_user_id": "user-42",
+                "status": "active",
+            },
+        }
+    ).encode()
+    event = webhooks.verify(raw, signed_headers(raw), SECRET)
+    assert isinstance(event, ConnectionCreatedWebhookEvent)
+    assert (event.data.id, event.data.end_user_id, event.data.status) == (
+        "conn_1",
+        "user-42",
+        "active",
+    )
+
+
+def test_connection_deleted_event() -> None:
+    body = {
+        "type": "connection.deleted",
+        "timestamp": "2026-10-22T08:00:00.000Z",
+        "data": {
+            "object": "connection",
+            "id": "conn_1",
+            "connector_key": "gmail",
+            "end_user_id": "user-42",
+        },
+    }
+    event = webhooks.parse_event(body)
+    assert isinstance(event, ConnectionDeletedWebhookEvent)
+    assert event.data.connector_key == "gmail" and event.data.end_user_id == "user-42"
+
+
+def test_connection_event_missing_a_field_fails_validation() -> None:
+    body = {
+        "type": "connection.deleted",
+        "timestamp": "t",
+        "data": {"object": "connection", "id": "conn_1"},
+    }
+    with pytest.raises(ValueError, match="end_user_id"):
+        webhooks.parse_event(body)
+
+
+def test_unknown_connection_event_still_falls_back() -> None:
+    body = {"type": "connection.refreshed", "timestamp": "t", "data": {"id": "conn_1"}}
+    assert isinstance(webhooks.parse_event(body), UnknownWebhookEvent)
 
 
 def test_unknown_event_type_is_kept_not_rejected() -> None:

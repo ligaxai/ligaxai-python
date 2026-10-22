@@ -3,7 +3,8 @@
 The response models are generated from the pinned OpenAPI spec (``_generated/``), as are
 the webhook events in its ``webhooks`` section. The run stream's event types are
 hand-written because the spec describes that stream only as ``text/event-stream``, and so
-is ``UnknownWebhookEvent`` (the fallback for a webhook type added later). Every model
+are ``UnknownWebhookEvent`` (the fallback for a webhook type added later) and the
+``connection.*`` events, whose bodies the spec does not describe yet. Every model
 inherits ``ligaxai.BaseModel``: unknown fields are kept rather than rejected, and
 ``.request_id`` carries the server's ``X-Request-Id``.
 """
@@ -44,7 +45,14 @@ from ._generated.models import (
     WebhookTestEventData,
 )
 from ._run_stream import RunEvent, RunEventList
-from ._webhooks import UnknownWebhookEvent, WebhookEvent
+from ._webhooks import (
+    ConnectionCreatedWebhookEvent,
+    ConnectionCreatedWebhookEventData,
+    ConnectionDeletedWebhookEvent,
+    ConnectionDeletedWebhookEventData,
+    UnknownWebhookEvent,
+    WebhookEvent,
+)
 from .resources.connect_sessions import CONNECT_SESSION_TERMINAL_STATUSES, ConnectSessionStatus
 from .resources.runs import TERMINAL_STATUSES, EndUserParam, InputParam, InterruptDecision
 from .resources.usage import UsageGroupBy
@@ -60,6 +68,10 @@ __all__ = [
     "ClientToken",
     "ConnectSession",
     "ConnectSessionStatus",
+    "ConnectionCreatedWebhookEvent",
+    "ConnectionCreatedWebhookEventData",
+    "ConnectionDeletedWebhookEvent",
+    "ConnectionDeletedWebhookEventData",
     "Conversation",
     "EndUserConnection",
     "EndUserConnectionDeleted",

@@ -8,6 +8,9 @@
   stays on the server; the browser chooses only the input and which of its own
   conversations to continue.
 * ``stream_proxy()`` re-encodes any SDK stream as ``text/event-stream``.
+* ``client_token_route()`` builds an endpoint that mints a short-lived client token
+  (``lgx_ct_…``) for the signed-in user, so the browser can call the API directly
+  without ever seeing the secret key.
 * ``webhook_dependency()`` verifies a webhook delivery against the request's raw body and
   hands the route a typed event, or answers ``400``.
 """
@@ -36,9 +39,11 @@ from ._webhooks import WebhookEvent, parse_event, verify_signature
 from .resources.runs import EndUserParam
 
 __all__ = [
+    "ClientTokenUserResolver",
     "EndUserResolver",
     "RunStreamBody",
     "client_dependency",
+    "client_token_route",
     "encode_run_event",
     "encode_sse",
     "run_stream_route",
@@ -53,6 +58,16 @@ _SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 EndUserResolver: TypeAlias = Callable[
     [Request], EndUserParam | str | Awaitable[EndUserParam | str | None] | None
 ]
+
+#: Maps the incoming request to the signed-in user a client token is for: an id, an
+#: ``(id, name)`` pair, or ``{"id", "name"}`` — or ``None`` when nobody is signed in (401).
+#: Sync or async; read from *your* session, never from anything the browser sends.
+ClientTokenUser: TypeAlias = EndUserParam | str | tuple[str, str | None] | None
+ClientTokenUserResolver: TypeAlias = Callable[
+    [Request], ClientTokenUser | Awaitable[ClientTokenUser]
+]
+
+_NO_STORE = {"Cache-Control": "no-store"}
 
 
 def client_dependency(**client_kwargs: Any) -> Callable[[], AsyncLigaX]:
@@ -212,6 +227,81 @@ async def _relay(stream: AsyncRunStream) -> AsyncIterator[bytes]:
             )
     finally:
         await stream.close()
+
+
+def _end_user_param(user: EndUserParam | str | tuple[str, str | None]) -> EndUserParam | str:
+    if isinstance(user, tuple):
+        user_id, name = user
+        return {"id": user_id, "name": name} if name else {"id": user_id}
+    return user
+
+
+def client_token_route(
+    client: AsyncLigaX | Callable[[], AsyncLigaX],
+    profile_id: str,
+    resolve_end_user: ClientTokenUserResolver,
+    *,
+    expires_in: int | None = None,
+) -> Callable[[Request], Awaitable[Response]]:
+    """Build a FastAPI endpoint that mints a client token for the signed-in user.
+
+    Usage::
+
+        get_client = client_dependency()
+
+        async def current_user(request: Request) -> tuple[str, str] | None:
+            user = request.state.user                 # from your auth, never the body
+            return (user.id, user.name) if user else None
+
+        app.post("/ligax/token")(client_token_route(get_client, "prf_…", current_user))
+
+    The browser calls it (``POST``, with its session cookie) and receives
+    ``{"token": "lgx_ct_…", "expires_at": "…"}`` with ``Cache-Control: no-store``, then
+    calls the API directly with ``Authorization: Bearer <token>``. The token runs only
+    ``profile_id``, only as that user, and expires in minutes (``expires_in``, 60 to 3600
+    seconds, server default 600) — have the page fetch a fresh one when it does.
+
+    ``resolve_end_user`` returning ``None`` answers ``401`` without calling the API. A
+    refusal from the API (missing ``client_tokens:write`` scope, unknown profile) comes
+    back with its status and ``{"error": {"code", "message", "request_id"}}``. The profile
+    must list your website under *allowed origins*, or the browser's calls are refused.
+    """
+
+    def _client() -> AsyncLigaX:
+        return client if isinstance(client, AsyncLigaX) else client()
+
+    async def endpoint(request: Request) -> Response:
+        resolved = resolve_end_user(request)
+        user = await resolved if inspect.isawaitable(resolved) else resolved
+        if not user:  # None, or an empty id: nobody is signed in
+            return JSONResponse(
+                {"error": {"code": "unauthenticated", "message": "Sign in first."}},
+                status_code=401,
+                headers=dict(_NO_STORE),
+            )
+        try:
+            minted = await _client().client_tokens.create(
+                profile_id=profile_id, end_user=_end_user_param(user), expires_in=expires_in
+            )
+        except APIStatusError as exc:
+            return JSONResponse(
+                {
+                    "error": {
+                        "code": exc.code,
+                        "message": exc.message,
+                        "request_id": exc.request_id,
+                    }
+                },
+                status_code=exc.status_code,
+                headers=dict(_NO_STORE),
+            )
+        # Only what the browser needs; the profile and user it was minted for are the
+        # server's business, and a bearer credential is never cached on the way.
+        return JSONResponse(
+            {"token": minted.token, "expires_at": minted.expires_at}, headers=dict(_NO_STORE)
+        )
+
+    return endpoint
 
 
 def webhook_dependency(

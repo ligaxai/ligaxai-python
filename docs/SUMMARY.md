@@ -12,6 +12,7 @@ ligaxai
 ├── resources.runs                   create/wait/stream/get/events/follow_events/cancel/resolve_interrupt
 ├── resources.{conversations,profiles,keys,usage}
 ├── resources.webhooks               create/list/get/update/delete/test (webhook endpoints)
+├── resources.client_tokens          create (short-lived lgx_ct_ token for one browser)
 ├── _run_stream                      RunEvent, TextAssembler (UTF-16 offsets), RunStream/AsyncRunStream
 ├── types                            public re-export of generated models + run event types
 ├── _base_client                     pipeline       auth, UA, idempotency, retries, error mapping
@@ -20,7 +21,7 @@ ligaxai
 ├── _exceptions                      APIError → APIConnectionError/APITimeoutError; APIStatusError → 9 subclasses
 ├── _generated.models                datamodel-codegen output from openapi/openapi.json (drift-checked)
 ├── webhooks                         verify() → typed event, verify_signature(), parse_event() (Standard Webhooks)
-└── fastapi                          client_dependency(), run_stream_route(), stream_proxy(), webhook_dependency() (optional extra)
+└── fastapi                          client_dependency(), run_stream_route(), client_token_route(), stream_proxy(), webhook_dependency() (optional extra)
 ```
 
 ## What works today

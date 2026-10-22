@@ -11,9 +11,14 @@ Last updated: 2026-10-22
 | Spec pin + codegen        | implemented | `public-api-spec-v0.1.0` copied from the platform repo; drift-checked   |
 | Agent API v0.1 resources  | implemented | branch `feat/agent-api-v0.1` (local, unpushed); gates green             |
 | Webhook endpoints + events | implemented | `feat/agent-api-v0.1` (local); spec re-pinned with `/webhooks` + `webhooks` section |
+| Browser access (client tokens) | implemented | branch `feat/browser-access` (local); spec re-pinned with `/client_tokens` |
 | First PyPI release        | planned     | needs pending trusted publisher + `pypi` environment on GitHub          |
 
 ## Team activity
+
+- 2026-10-22 — browser access (platform Phase 5) on `feat/browser-access`:
+  `client.client_tokens.create`, FastAPI `client_token_route`, client tokens accepted as
+  `api_key`; `gen_types --check` location fix; 218 tests.
 
 - 2026-10-22 — webhooks: `client.webhooks.*` (create/list/get/update/delete/test), typed
   `webhooks.verify()` generated from the spec's `webhooks` section, FastAPI

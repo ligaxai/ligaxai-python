@@ -156,10 +156,10 @@ async def test_create_refuses_an_empty_connector_key(
 @pytest.mark.parametrize(
     ("status", "code", "exc", "attempts"),
     [
-        # 409 is retryable by the shared policy (an idempotent request still in flight), and
-        # the platform does not send `x-should-retry: false` with this one, so it is tried
-        # three times before it surfaces. 403 and 422 are never retried.
-        (409, "end_user_connections_off", ConflictError, 3),
+        # A 409 is retried only when the server marks it retryable (`x-should-retry: true`,
+        # an idempotent request still in flight); this one is a setting, so it surfaces at
+        # once. 403 and 422 are never retried.
+        (409, "end_user_connections_off", ConflictError, 1),
         (422, "connector_not_available", UnprocessableEntityError, 1),
         (422, "connector_not_connectable", UnprocessableEntityError, 1),
         (403, "token_scope", PermissionDeniedError, 1),

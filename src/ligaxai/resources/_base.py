@@ -60,4 +60,8 @@ def path_segment(value: str, name: str) -> str:
     """Percent-encode one path segment, refusing an empty id before a request is made."""
     if not isinstance(value, str) or not value:  # pyright: ignore[reportUnnecessaryIsInstance]
         raise ValueError(f"{name} must be a non-empty string, got {value!r}")
+    # `.` and `..` survive percent-encoding and are resolved by URL joining, so an id of `..`
+    # would turn `/runs/{id}/cancel` into another endpoint. No real id looks like that.
+    if value in {".", ".."}:
+        raise ValueError(f"{name} is not a valid id: {value!r}")
     return quote(value, safe="")

@@ -50,6 +50,16 @@ class ServerSentEvent(BaseModel):
         return json.loads(self.data)
 
 
+#: Longest single SSE line, and largest single event, the decoder holds. LigaX frames are a
+#: few KB; anything near these limits is a broken or hostile stream, not data.
+MAX_LINE_BYTES = 8 * 1024 * 1024
+MAX_EVENT_BYTES = 16 * 1024 * 1024
+
+
+class StreamTooLargeError(ValueError):
+    """A stream sent a line or an event larger than the decoder will hold in memory."""
+
+
 class SSEDecoder:
     """Incremental line-oriented SSE decoder. Feed chunks, collect events."""
 
@@ -59,15 +69,23 @@ class SSEDecoder:
         self._data: list[str] = []
         self._id: str | None = None
         self._retry: int | None = None
+        self._data_bytes = 0
         self.last_event_id: str | None = None
 
     def feed(self, chunk: bytes) -> list[ServerSentEvent]:
         """Consume a chunk; return every event completed by it."""
         self._buffer += chunk
         events: list[ServerSentEvent] = []
+        if b"\n" not in chunk and b"\r" not in chunk:
+            # No line ended in this chunk: nothing to split, so do not rescan the whole buffer.
+            if len(self._buffer) > MAX_LINE_BYTES:
+                raise StreamTooLargeError("An SSE line exceeded the size limit.")
+            return events
         while True:
             line, sep, rest = _split_line(self._buffer)
             if not sep:
+                if len(self._buffer) > MAX_LINE_BYTES:
+                    raise StreamTooLargeError("An SSE line exceeded the size limit.")
                 break
             self._buffer = rest
             event = self._feed_line(line)
@@ -100,6 +118,9 @@ class SSEDecoder:
         if field == "event":
             self._event = value
         elif field == "data":
+            self._data_bytes += len(value) + 1
+            if self._data_bytes > MAX_EVENT_BYTES:
+                raise StreamTooLargeError("An SSE event exceeded the size limit.")
             self._data.append(value)
         elif field == "id":
             # A NUL in the id means "ignore" per the spec.
@@ -121,6 +142,7 @@ class SSEDecoder:
         )
         self._event = None
         self._data = []
+        self._data_bytes = 0
         self._id = None
         self._retry = None
         return event

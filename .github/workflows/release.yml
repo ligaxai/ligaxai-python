@@ -28,17 +28,30 @@ jobs:
     outputs:
       channel: ${{ steps.meta.outputs.channel }}
       version: ${{ steps.meta.outputs.version }}
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0 # to check a release tag's commit is on main
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
+          version: "0.11.30"
           python-version: "3.12"
+          # A release is built from a clean resolve: a cache written by any other branch's run
+          # must never feed what gets published.
+          enable-cache: false
       - name: Resolve channel and version
         id: meta
         run: |
           base="$(uv run --no-project python -c "import re,pathlib;print(re.search(r'\"([^\"]+)\"', pathlib.Path('src/ligaxai/_version.py').read_text()).group(1))")"
           if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             test "v$base" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != v$base"; exit 1; }
+            # A stable release is only ever a commit already on main: a tag pushed on any other
+            # branch's commit (by mistake, or by a compromised account) publishes nothing.
+            git merge-base --is-ancestor "${GITHUB_SHA}" origin/main \
+              || { echo "tag ${GITHUB_REF_NAME} is not on main"; exit 1; }
             echo "channel=stable" >> "$GITHUB_OUTPUT"
             echo "version=$base" >> "$GITHUB_OUTPUT"
           else
@@ -87,6 +100,9 @@ jobs:
     needs: build
     if: vars.PYPI_PUBLISH_ENABLED != 'true'
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
-      - run: |
-          echo "::notice title=PyPI publish skipped::Built ${{ needs.build.outputs.version }} but did not publish. Add the PyPI trusted publisher (repository ligaxai/ligaxai-python, workflow release.yml, environment pypi-dev and pypi), then set the repository variable PYPI_PUBLISH_ENABLED=true."
+      - env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          echo "::notice title=PyPI publish skipped::Built ${VERSION} but did not publish. Add the PyPI trusted publisher (repository ligaxai/ligaxai-python, workflow release.yml, environment pypi-dev and pypi), then set the repository variable PYPI_PUBLISH_ENABLED=true."

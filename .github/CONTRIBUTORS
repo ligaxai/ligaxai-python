@@ -1,0 +1,6 @@
+# GitHub logins that may open pull requests in this repository.
+# Anyone else may open issues. A workflow closes pull requests from other logins.
+# Adding a login is a change to this file and needs review before it merges.
+ligaments-sadain
+mahesh-cuber-24
+dependabot[bot]

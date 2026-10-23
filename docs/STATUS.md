@@ -18,6 +18,9 @@ Last updated: 2026-10-22
 
 ## Team activity
 
+- 2026-10-24 — CI gate (`ci-gate`) on `main` and `dev`, and an allow-list that closes
+  pull requests from other logins. GitHub rulesets for `main`/`dev` are repository settings.
+
 - 2026-10-22 — files and protocols (platform Phases 7–8) on `feat/files-and-protocols`:
   spec v0.5.0; `client.files` (create/get/delete, multipart, 25 MB guard), run
   `attachments`, `webhooks.create(idempotency_key=)` with replay and `409` retry covered;

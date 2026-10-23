@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
 import httpx2
+import pytest
 from fastapi import Depends, FastAPI, Request
 from standardwebhooks import Webhook
 
@@ -169,13 +170,16 @@ async def test_run_stream_route_forwards_refusals(recorder: Recorder) -> None:
         )
     ]
     app = FastAPI()
-    app.post("/chat")(run_stream_route(lambda: _upstream(recorder), PROFILE_ID))
+    app.post("/chat")(
+        run_stream_route(lambda: _upstream(recorder), PROFILE_ID, allow_anonymous=True)
+    )
     r = await _post(app, {"input": "Hello"})
+    # A spend refusal keeps its status and code; the wording is ours, not the API's.
     assert r.status_code == 402
     assert r.json() == {
         "error": {
             "code": "key_limit_reached",
-            "message": "This key reached its limit.",
+            "message": "The assistant is unavailable right now.",
             "request_id": "req_402",
         }
     }
@@ -364,11 +368,46 @@ async def test_client_token_route_forwards_refusals(recorder: Recorder) -> None:
         transport=httpx2.ASGITransport(app=app), base_url="http://t"
     ) as http:
         r = await http.post("/token")
-    assert r.status_code == 403
-    assert r.json() == {
-        "error": {
-            "code": "insufficient_scope",
-            "message": "This key lacks client_tokens:write.",
-            "request_id": "req_ct",
-        }
-    }
+    # A scope the server's own key lacks is a server problem: the browser gets a generic 502.
+    assert r.status_code == 502
+    assert "insufficient_scope" not in r.text
+    assert r.json()["error"]["request_id"] == "req_ct"
+
+
+def test_run_stream_route_refuses_to_run_for_anyone() -> None:
+    with pytest.raises(TypeError, match="resolve_end_user"):
+        run_stream_route(AsyncLigaX(api_key="lgx_sk_test"), PROFILE_ID)
+
+
+async def test_run_stream_route_needs_a_signed_in_user(recorder: Recorder) -> None:
+    app = FastAPI()
+    app.post("/chat")(run_stream_route(_upstream(recorder), PROFILE_ID, lambda _r: None))
+    r = await _post(app, {"input": "Hello"})
+    assert r.status_code == 401
+    assert recorder.requests == []
+
+
+async def test_browser_routes_refuse_cross_site_requests(recorder: Recorder) -> None:
+    app = FastAPI()
+    app.post("/chat")(run_stream_route(_upstream(recorder), PROFILE_ID, lambda _r: "u"))
+    app.post("/token")(client_token_route(_upstream(recorder), PROFILE_ID, lambda _r: "u"))
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), base_url="http://t"
+    ) as http:
+        chat = await http.post(
+            "/chat", json={"input": "Hi"}, headers={"sec-fetch-site": "cross-site"}
+        )
+        token = await http.post("/token", headers={"sec-fetch-site": "cross-site"})
+    assert chat.status_code == 403
+    assert token.status_code == 403
+    assert recorder.requests == []
+
+
+async def test_webhook_dependency_refuses_an_oversized_body() -> None:
+    app, seen = _webhook_app("whsec_" + base64.b64encode(b"k" * 24).decode())
+    async with httpx2.AsyncClient(
+        transport=httpx2.ASGITransport(app=app), base_url="http://t"
+    ) as http:
+        r = await http.post("/hooks", content=b"x" * 1_000_001)
+    assert r.status_code == 413
+    assert seen == []

@@ -170,3 +170,21 @@ def test_stream_without_registry_yields_raw_events(recorder: Recorder) -> None:
     recorder.responses = [sse_response(_SyncStream(b"data: a\n\ndata: b\n\n"))]
     stream = make_sync_client(recorder).request_stream("GET", "/stream")
     assert [e.data for e in stream if isinstance(e, ServerSentEvent)] == ["a", "b"]
+
+
+def test_a_line_or_event_past_the_size_limit_is_refused() -> None:
+    from ligaxai._streaming import MAX_LINE_BYTES, SSEDecoder, StreamTooLargeError
+
+    decoder = SSEDecoder()
+    with pytest.raises(StreamTooLargeError):
+        decoder.feed(b"data: " + b"x" * (MAX_LINE_BYTES + 1))
+
+
+def test_a_text_offset_past_any_real_answer_is_ignored() -> None:
+    from ligaxai import RunEvent, TextAssembler
+
+    assembler = TextAssembler()
+    event = RunEvent(
+        type="text.delta", seq=1, payload={"part_id": "p", "offset": 10**12, "text": "x"}
+    )
+    assert assembler.apply(event) == ""

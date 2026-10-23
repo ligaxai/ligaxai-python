@@ -1,8 +1,17 @@
 # Workflow actions are pinned to commit SHAs (a release job holds publish rights through OIDC, so a
-# moved tag must not change what runs). Dependabot proposes the SHA bumps.
+# moved tag must not change what runs). Dependabot proposes the SHA bumps, and dependency updates,
+# after a week's cool-down so a freshly hijacked release is likely caught before it reaches us.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

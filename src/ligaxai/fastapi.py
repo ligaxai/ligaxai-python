@@ -69,6 +69,82 @@ ClientTokenUserResolver: TypeAlias = Callable[
 
 _NO_STORE = {"Cache-Control": "no-store"}
 
+#: Statuses about the browser's own request, whose API message is safe and useful to show it.
+_CALLER_STATUSES = frozenset({400, 404, 409, 413, 415, 422, 429})
+
+#: Largest webhook body ``webhook_dependency`` reads by default (LigaX events are thin: ~2 KB).
+DEFAULT_MAX_WEBHOOK_BYTES = 1_000_000
+
+
+def _error_response(exc: APIStatusError, extra_headers: dict[str, str] | None = None) -> Response:
+    """What the browser learns when the API refuses a call made with **your** key.
+
+    A 401/403 is about your server's configuration and a 5xx about LigaX — neither is the
+    visitor's to read, and a front end would mistake a 401 for "you are signed out" — so they
+    become a generic 502 that keeps the request id for your logs. Spend refusals keep their
+    status and code with generic wording.
+    """
+    headers = dict(_NO_STORE)
+    headers.update(extra_headers or {})
+    if exc.request_id:
+        headers["X-Request-Id"] = exc.request_id
+    if exc.status_code in _CALLER_STATUSES:
+        retry_after = exc.response.headers.get("retry-after")
+        if retry_after:
+            headers["Retry-After"] = retry_after
+        return JSONResponse(
+            {"error": {"code": exc.code, "message": exc.message, "request_id": exc.request_id}},
+            status_code=exc.status_code,
+            headers=headers,
+        )
+    if exc.status_code == 402:
+        return JSONResponse(
+            {
+                "error": {
+                    "code": exc.code,
+                    "message": "The assistant is unavailable right now.",
+                    "request_id": exc.request_id,
+                }
+            },
+            status_code=402,
+            headers=headers,
+        )
+    return JSONResponse(
+        {
+            "error": {
+                "code": "upstream_error",
+                "message": "The assistant is unavailable right now.",
+                "request_id": exc.request_id,
+            }
+        },
+        status_code=502,
+        headers=headers,
+    )
+
+
+def _cross_site(request: Request, allow_cross_site: bool) -> Response | None:
+    """403 for a request the browser marks as coming from another site (CSRF), unless allowed."""
+    if allow_cross_site or request.headers.get("sec-fetch-site", "").lower() != "cross-site":
+        return None
+    return JSONResponse(
+        {
+            "error": {
+                "code": "cross_site_request",
+                "message": "This route only accepts requests from its own site.",
+            }
+        },
+        status_code=403,
+        headers=dict(_NO_STORE),
+    )
+
+
+def _not_signed_in() -> Response:
+    return JSONResponse(
+        {"error": {"code": "unauthenticated", "message": "Sign in first."}},
+        status_code=401,
+        headers=dict(_NO_STORE),
+    )
+
 
 def client_dependency(**client_kwargs: Any) -> Callable[[], AsyncLigaX]:
     """Return a FastAPI dependency that yields a shared ``AsyncLigaX``.
@@ -149,6 +225,8 @@ def run_stream_route(
     resolve_end_user: EndUserResolver | None = None,
     *,
     model: str | None = None,
+    allow_anonymous: bool = False,
+    allow_cross_site: bool = False,
 ) -> Callable[[RunStreamBody, Request], Awaitable[Response]]:
     """Build a FastAPI endpoint that streams a run of ``profile_id`` to the browser.
 
@@ -168,18 +246,33 @@ def run_stream_route(
     profile, spend limit, rate limit) arrives as a plain HTTP error with the API's status and
     ``{"error": {"code", "message", "request_id"}}`` instead of a broken stream.
 
-    Pass ``resolve_end_user`` whenever more than one person uses your app: conversations
-    are scoped to the end user, so one person cannot continue another's conversation.
+    Every run acts as its end user — with the accounts *they* connected — and is billed to
+    your key, so ``resolve_end_user`` is required and a request with no signed-in user gets
+    ``401`` without calling the API. For a public assistant pass ``allow_anonymous=True``
+    instead (then give the key a spend limit and rate-limit the route). Conversations are
+    scoped to the end user, so one person cannot continue another's. Requests a browser marks
+    ``Sec-Fetch-Site: cross-site`` are refused (CSRF) unless ``allow_cross_site=True``.
     """
+    if resolve_end_user is None and not allow_anonymous:
+        raise TypeError(
+            "run_stream_route: pass resolve_end_user (the signed-in user from your session), "
+            "or allow_anonymous=True for a public assistant. Without either, any visitor would "
+            "run agents on your key."
+        )
 
     def _client() -> AsyncLigaX:
         return client if isinstance(client, AsyncLigaX) else client()
 
     async def endpoint(body: RunStreamBody, request: Request) -> Response:
+        refused = _cross_site(request, allow_cross_site)
+        if refused is not None:
+            return refused
         end_user: EndUserParam | str | None = None
         if resolve_end_user is not None:
             resolved = resolve_end_user(request)
             end_user = await resolved if inspect.isawaitable(resolved) else resolved
+        if not end_user and not allow_anonymous:
+            return _not_signed_in()
         try:
             stream = await _client().runs.stream(
                 profile_id=profile_id,
@@ -189,16 +282,7 @@ def run_stream_route(
                 model=model,
             )
         except APIStatusError as exc:
-            return JSONResponse(
-                {
-                    "error": {
-                        "code": exc.code,
-                        "message": exc.message,
-                        "request_id": exc.request_id,
-                    }
-                },
-                status_code=exc.status_code,
-            )
+            return _error_response(exc)
         headers = dict(_SSE_HEADERS)
         for name, value in (
             ("X-Run-Id", stream.run_id),
@@ -242,6 +326,7 @@ def client_token_route(
     resolve_end_user: ClientTokenUserResolver,
     *,
     expires_in: int | None = None,
+    allow_cross_site: bool = False,
 ) -> Callable[[Request], Awaitable[Response]]:
     """Build a FastAPI endpoint that mints a client token for the signed-in user.
 
@@ -271,30 +356,20 @@ def client_token_route(
         return client if isinstance(client, AsyncLigaX) else client()
 
     async def endpoint(request: Request) -> Response:
+        # Minting a token hands a credential to whoever asks: never for another site's page.
+        refused = _cross_site(request, allow_cross_site)
+        if refused is not None:
+            return refused
         resolved = resolve_end_user(request)
         user = await resolved if inspect.isawaitable(resolved) else resolved
         if not user:  # None, or an empty id: nobody is signed in
-            return JSONResponse(
-                {"error": {"code": "unauthenticated", "message": "Sign in first."}},
-                status_code=401,
-                headers=dict(_NO_STORE),
-            )
+            return _not_signed_in()
         try:
             minted = await _client().client_tokens.create(
                 profile_id=profile_id, end_user=_end_user_param(user), expires_in=expires_in
             )
         except APIStatusError as exc:
-            return JSONResponse(
-                {
-                    "error": {
-                        "code": exc.code,
-                        "message": exc.message,
-                        "request_id": exc.request_id,
-                    }
-                },
-                status_code=exc.status_code,
-                headers=dict(_NO_STORE),
-            )
+            return _error_response(exc)
         # Only what the browser needs; the profile and user it was minted for are the
         # server's business, and a bearer credential is never cached on the way.
         return JSONResponse(
@@ -306,6 +381,8 @@ def client_token_route(
 
 def webhook_dependency(
     secret: str | Callable[[], str],
+    *,
+    max_body_bytes: int = DEFAULT_MAX_WEBHOOK_BYTES,
 ) -> Callable[[Request], Awaitable[WebhookEvent]]:
     """Return a FastAPI dependency that verifies a webhook and yields its typed event.
 
@@ -329,7 +406,18 @@ def webhook_dependency(
 
     async def _dependency(request: Request) -> WebhookEvent:
         key = secret() if callable(secret) else secret
-        body = await request.body()
+        # Anyone can POST to a webhook URL: read at most `max_body_bytes` before verifying.
+        declared = request.headers.get("content-length", "")
+        if declared.isdigit() and int(declared) > max_body_bytes:
+            raise HTTPException(status_code=413, detail="Webhook body too large.")
+        chunks: list[bytes] = []
+        size = 0
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > max_body_bytes:
+                raise HTTPException(status_code=413, detail="Webhook body too large.")
+            chunks.append(chunk)
+        body = b"".join(chunks)
         try:
             # An invalid `secret` is a configuration error: its ValueError propagates (500).
             verify_signature(body, request.headers, key)

@@ -3,19 +3,24 @@
     export LIGAX_API_KEY=lgx_sk_...          # never commit it; local env files are git-ignored
     export LIGAX_PROFILE_ID=prf_...          # a published profile this key may run
     export LIGAX_BASE_URL=...                # optional: the development platform
+    export LIGAX_DEMO_USER=me                # local try-out only: everyone is this one user
     uv run uvicorn main:app --reload
 
 GET  /         a one-file chat page that streams through /chat
-GET  /me       what the key is allowed to do (keys.self)
 POST /ask      {"input": "..."} -> the finished run as JSON (runs.wait)
 POST /chat     {"input": "...", "conversation_id"?: "..."} -> text/event-stream (run_stream_route)
+
+**Before you deploy it:** replace ``current_user`` with your own auth. Every run acts as the user
+it returns — with the accounts they connected — and is billed to your key; without a signed-in
+user the routes answer 401. Give the key a spend limit and only the scopes it needs, and put a
+rate limit in front of ``/ask`` and ``/chat``.
 """
 
 from __future__ import annotations
 
 import os
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
@@ -29,27 +34,17 @@ app = FastAPI(title="LigaX agent example")
 get_client = client_dependency()
 
 
-def current_user(request: Request) -> str:
-    """Who the run is for. A real app reads this from its own session or token — never from
-    the request body — so one user cannot continue another's conversation."""
-    return request.headers.get("x-demo-user", "demo-user")
+def current_user(request: Request) -> str | None:
+    """Who the run is for — **replace this with your own auth** (a session cookie, a verified
+    JWT). Never read it from the request body or a header the browser sets, or anyone could act
+    as anyone else, with their connected accounts. ``LIGAX_DEMO_USER`` exists for a local
+    try-out only; without it nobody is signed in and the routes answer 401."""
+    return os.environ.get("LIGAX_DEMO_USER") or None
 
 
 class Ask(BaseModel):
     input: str
     conversation_id: str | None = None
-
-
-@app.get("/me")
-async def me(client: AsyncLigaX = Depends(get_client)) -> dict[str, object]:  # noqa: B008
-    key = await client.keys.self()
-    return {
-        "name": key.name,
-        "environment": key.environment,
-        "scopes": key.scopes,
-        "remaining_usd": key.limit.remaining_usd,
-        "request_id": key.request_id,
-    }
 
 
 @app.post("/ask")
@@ -58,11 +53,14 @@ async def ask(
     request: Request,
     client: AsyncLigaX = Depends(get_client),  # noqa: B008
 ) -> dict[str, object]:
+    user = current_user(request)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Sign in first.")
     run = await client.runs.wait(
         profile_id=PROFILE_ID,
         input=body.input,
         conversation_id=body.conversation_id,
-        end_user=current_user(request),
+        end_user=user,
     )
     return {
         "status": run.status,

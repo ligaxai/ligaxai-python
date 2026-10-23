@@ -125,3 +125,27 @@ async def test_async_client_round_trip(recorder: Recorder) -> None:
         assert copy.max_retries == 0
         await copy.close()
     assert recorder.requests[0].headers["Authorization"] == "Bearer k"
+
+
+def test_ids_that_would_change_the_endpoint_are_refused() -> None:
+    from ligaxai.resources._base import path_segment
+
+    for bad in (".", ".."):
+        with pytest.raises(ValueError):
+            path_segment(bad, "run_id")
+    assert path_segment("a/../b", "run_id") == "a%2F..%2Fb"
+
+
+def test_a_key_with_whitespace_is_refused_before_any_request() -> None:
+    from ligaxai import LigaX
+    from ligaxai._client import MissingAPIKeyError
+
+    with pytest.raises(MissingAPIKeyError):
+        LigaX(api_key="lgx_sk_dev_abc\n")
+
+
+def test_logs_never_carry_keys_tokens_or_webhook_secrets() -> None:
+    from ligaxai._logging import redact
+
+    text = redact("using lgx_sk_live_ABCdef123 and lgx_ct_eyJ.sig and whsec_c2VjcmV0")
+    assert "ABCdef123" not in text and "eyJ" not in text and "c2VjcmV0" not in text

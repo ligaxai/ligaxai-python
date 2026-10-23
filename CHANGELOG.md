@@ -8,6 +8,14 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- **Security defaults.** `run_stream_route` needs `resolve_end_user` (or `allow_anonymous=True`)
+  and answers 401 without a signed-in user; it and `client_token_route` refuse cross-site requests
+  and no longer pass refusals about your own key to the browser (a generic 502 with the request id;
+  spend refusals keep their code). `webhook_dependency` reads at most 1 MB. A key with whitespace
+  is refused at construction; ids of `.`/`..` are refused; logs redact any LigaX key, client token
+  or webhook secret; a 409 is retried only when the API marks it retryable; oversized stream lines
+  and absurd text offsets are refused. Dependencies are bounded by their next major. The example
+  app takes its user from one replaceable `current_user()` and no longer exposes `keys.self()`.
 - Spec pinned to `public-api-spec-v0.6.0`. A run's `Idempotency-Key` replay that arrives while the
   first request is still starting answers `409 idempotency_in_progress` with `x-should-retry: true`,
   which the client retries. Run events are a safe subset: tool events carry name, status and

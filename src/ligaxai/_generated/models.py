@@ -447,6 +447,14 @@ class Profile(BaseModel):
     models: ProfileModels
     connectors: list[ProfileConnector]
     end_user_identity: str
+    tool_access: Literal["read_only", "read_write", "custom"] = Field(
+        ...,
+        description="What the agent may do for callers: look things up, also take actions (each needing approval), or a chosen set of tools. Website visitors are always read-only.",
+    )
+    approvals: Literal["server", "end_users"] = Field(
+        ...,
+        description="Who may answer the agent's approval requests: a secret key only, or also the signed-in user's client token.",
+    )
     published_at: str | None
 
 

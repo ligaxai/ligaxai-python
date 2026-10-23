@@ -13,7 +13,7 @@ Last updated: 2026-10-22
 | Webhook endpoints + events | implemented | `feat/agent-api-v0.1` (local); spec re-pinned with `/webhooks` + `webhooks` section |
 | Browser access (client tokens) | implemented | branch `feat/browser-access` (local); spec re-pinned with `/client_tokens` |
 | End-user connections      | implemented | branch `feat/end-user-connections` (local); spec re-pinned `public-api-spec-v0.3.0` |
-| Files + protocols         | implemented | branch `feat/files-and-protocols` (local, unpushed); spec `public-api-spec-v0.6.0` |
+| Files + protocols         | implemented | branch `feat/files-and-protocols` (local, unpushed); spec `public-api-spec-v0.7.0` |
 | First PyPI release        | planned     | needs pending trusted publisher + `pypi` environment on GitHub          |
 
 ## Team activity

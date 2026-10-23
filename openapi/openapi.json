@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "LigaX Agent API",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "description": "Run the agents you configure in LigaX from your own software. Authenticate with an organisation API key from Settings → Developers."
   },
   "servers": [
@@ -143,6 +143,23 @@
           "end_user_identity": {
             "type": "string"
           },
+          "tool_access": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "read_write",
+              "custom"
+            ],
+            "description": "What the agent may do for callers: look things up, also take actions (each needing approval), or a chosen set of tools. Website visitors are always read-only."
+          },
+          "approvals": {
+            "type": "string",
+            "enum": [
+              "server",
+              "end_users"
+            ],
+            "description": "Who may answer the agent's approval requests: a secret key only, or also the signed-in user's client token."
+          },
           "published_at": {
             "anyOf": [
               {
@@ -163,6 +180,8 @@
           "models",
           "connectors",
           "end_user_identity",
+          "tool_access",
+          "approvals",
           "published_at"
         ],
         "additionalProperties": false
@@ -4923,6 +4942,23 @@
                     "end_user_identity": {
                       "type": "string"
                     },
+                    "tool_access": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "read_write",
+                        "custom"
+                      ],
+                      "description": "What the agent may do for callers: look things up, also take actions (each needing approval), or a chosen set of tools. Website visitors are always read-only."
+                    },
+                    "approvals": {
+                      "type": "string",
+                      "enum": [
+                        "server",
+                        "end_users"
+                      ],
+                      "description": "Who may answer the agent's approval requests: a secret key only, or also the signed-in user's client token."
+                    },
                     "published_at": {
                       "anyOf": [
                         {
@@ -4943,6 +4979,8 @@
                     "models",
                     "connectors",
                     "end_user_identity",
+                    "tool_access",
+                    "approvals",
                     "published_at"
                   ],
                   "additionalProperties": false

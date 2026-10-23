@@ -41,6 +41,8 @@ PROFILE = {
     "models": {"default": "gemini/gemini-flash/latest", "allowed": []},
     "connectors": [{"type": "servicenow", "name": "ServiceNow"}],
     "end_user_identity": "optional",
+    "tool_access": "read_only",
+    "approvals": "server",
     "published_at": "2026-10-20T00:00:00.000Z",
 }
 API_KEY = {

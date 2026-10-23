@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Spec pinned to `public-api-spec-v0.7.0`: a profile reports `tool_access` (`read_only`,
+  `read_write` or `custom`) and `approvals` (`server` or `end_users`).
 - **Security defaults.** `run_stream_route` needs `resolve_end_user` (or `allow_anonymous=True`)
   and answers 401 without a signed-in user; it and `client_token_route` refuse cross-site requests
   and no longer pass refusals about your own key to the browser (a generic 502 with the request id;

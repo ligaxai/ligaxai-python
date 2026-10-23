@@ -1,0 +1,5 @@
+# Workflow and allow-list edits must be approved by the repository owner.
+# Other pull requests still need one review; they do not need this owner.
+/.github/workflows/ @ligaments-sadain
+/.github/CONTRIBUTORS @ligaments-sadain
+/.github/CODEOWNERS @ligaments-sadain

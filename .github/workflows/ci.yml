@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
 
 permissions:
@@ -16,6 +16,7 @@ jobs:
   test:
     name: py${{ matrix.python }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +62,7 @@ jobs:
   lockfile:
     name: uv.lock is current
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -79,6 +81,7 @@ jobs:
     # The release workflow holds publish rights; any change to a workflow is audited before merge.
     name: workflow security (zizmor)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -87,3 +90,29 @@ jobs:
         with:
           version: "0.11.30"
       - run: uvx zizmor@1.16.0 --offline --min-severity medium .github/workflows
+
+  # One check name for branch protection. A pull request that renames a matrix job still
+  # fails this gate, and protection does not have to list every matrix cell.
+  ci-gate:
+    name: ci-gate
+    needs: [test, lockfile, workflows]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail unless every required job succeeded
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+          LOCKFILE_RESULT: ${{ needs.lockfile.result }}
+          WORKFLOWS_RESULT: ${{ needs.workflows.result }}
+        run: |
+          set -eu
+          fail=0
+          for name in TEST LOCKFILE WORKFLOWS; do
+            value="$(printenv "${name}_RESULT")"
+            if [ "$value" != "success" ]; then
+              echo "::error::${name} finished as ${value}"
+              fail=1
+            fi
+          done
+          exit "$fail"

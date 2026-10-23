@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- CI runs on pushes to `main` and `dev` and ends in one `ci-gate` job for branch protection.
+  Pull requests from logins outside `.github/CONTRIBUTORS` are closed; issues stay open.
 - Spec pinned to `public-api-spec-v0.7.0`: a profile reports `tool_access` (`read_only`,
   `read_write` or `custom`) and `approvals` (`server` or `end_users`).
 - **Security defaults.** `run_stream_route` needs `resolve_end_user` (or `allow_anonymous=True`)

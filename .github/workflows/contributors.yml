@@ -1,0 +1,60 @@
+name: Contributors
+
+# Closes pull requests from logins that are not in .github/CONTRIBUTORS.
+# Issues are untouched. pull_request_target is required so the allow-list comes from
+# the base branch: a pull request must not be able to delete this check.
+# The job checks out that base commit only and never runs code from the pull request.
+on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers] base checkout only; never executes PR code
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  allow-list:
+    name: org contributors only
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.base.sha }}
+      - name: Close pull requests from outside the allow-list
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          case "$PR_NUMBER" in
+            ''|*[!0-9]*) echo "bad pull request number" >&2; exit 1 ;;
+          esac
+          case "$REPO" in
+            ligaxai/ligaxai-python) ;;
+            *) echo "unexpected repository" >&2; exit 1 ;;
+          esac
+          set +e
+          python3 - <<'PY'
+          import os, pathlib, sys
+          author = os.environ["AUTHOR"]
+          allowed = {
+              line.strip()
+              for line in pathlib.Path(".github/CONTRIBUTORS").read_text().splitlines()
+              if line.strip() and not line.startswith("#")
+          }
+          sys.exit(0 if author in allowed else 2)
+          PY
+          status=$?
+          set -e
+          if [ "$status" -eq 0 ]; then
+            echo "allowed"
+            exit 0
+          fi
+          if [ "$status" -ne 2 ]; then
+            exit "$status"
+          fi
+          gh pr close "$PR_NUMBER" --repo "$REPO" --comment "Code changes in this repository are limited to the logins in .github/CONTRIBUTORS. Please open an issue instead."

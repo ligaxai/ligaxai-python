@@ -11,8 +11,16 @@ name: Release
 # (project `ligaxai`, owner `ligaxai`, repo `ligaxai-python`, workflow `release.yml`,
 # environments `pypi` and `pypi-dev`). No token is stored anywhere; OIDC is the credential.
 #
-# After a stable tag, bump _version.py on `dev` (e.g. 0.1.0 -> 0.1.1) so the next dev build sorts
-# above the release: PEP 440 orders 0.1.0.dev1 < 0.1.0 < 0.1.1.dev1.
+# **Two switches, one per channel** (repository *variables*, not secrets: a secret cannot be read in a
+# job's `if:`, and an on/off switch is not secret). Anything other than the exact string `true` is off.
+#   PUBLISH_DEV_ENABLED   true → every push to `dev` publishes `X.Y.Z.dev<run>`.
+#   PUBLISH_MAIN_ENABLED  true → a `vX.Y.Z` tag on main publishes the stable release.
+# While a switch is off the build and tests still run, and the run ends with a notice naming it.
+#
+# **Versions only go up.** scripts/dev_version.py raises the base above anything already on PyPI
+# (PEP 440 orders 0.1.0.dev1 < 0.1.0 < 0.1.1.dev1), so a stable release nobody followed with a
+# bump on `dev` can never make the next dev build sort below it. Bumping _version.py on `dev` after a
+# stable release is still the tidy thing to do. A re-run of the same run skips files already uploaded.
 
 on:
   push:
@@ -55,7 +63,7 @@ jobs:
             echo "channel=stable" >> "$GITHUB_OUTPUT"
             echo "version=$base" >> "$GITHUB_OUTPUT"
           else
-            v="${base}.dev${GITHUB_RUN_NUMBER}"
+            v="$(uv run --no-project python scripts/dev_version.py "$base" "${GITHUB_RUN_NUMBER}")"
             # The pre-release version is stamped into the build only; nothing is committed.
             printf '__version__ = "%s"\n' "$v" > src/ligaxai/_version.py
             echo "channel=dev" >> "$GITHUB_OUTPUT"
@@ -71,13 +79,13 @@ jobs:
           path: dist/
           if-no-files-found: error
 
-  # Gated on the repository variable PYPI_PUBLISH_ENABLED=true, set once the trusted publishers for
-  # `release.yml` + environments `pypi-dev` / `pypi` exist on PyPI. Until then the build above still
-  # proves the sdist and wheel, and `skipped` below says why nothing was published — instead of an
-  # `invalid-publisher` failure on every push.
+  # One switch per channel (see the header). While a channel is off the build above still proves the
+  # sdist and wheel, and `skipped` below says which switch is off.
   publish:
     needs: build
-    if: vars.PYPI_PUBLISH_ENABLED == 'true'
+    if: >-
+      (needs.build.outputs.channel == 'dev' && vars.PUBLISH_DEV_ENABLED == 'true') ||
+      (needs.build.outputs.channel == 'stable' && vars.PUBLISH_MAIN_ENABLED == 'true')
     runs-on: ubuntu-latest
     environment:
       name: ${{ needs.build.outputs.channel == 'stable' && 'pypi' || 'pypi-dev' }}
@@ -95,14 +103,20 @@ jobs:
         with:
           attestations: true
           print-hash: true
+          # A re-run of the same workflow run rebuilds the same version; PyPI refuses a second upload
+          # of a file, so skip what is already there instead of failing.
+          skip-existing: true
 
   skipped:
     needs: build
-    if: vars.PYPI_PUBLISH_ENABLED != 'true'
+    if: >-
+      (needs.build.outputs.channel == 'dev' && vars.PUBLISH_DEV_ENABLED != 'true') ||
+      (needs.build.outputs.channel == 'stable' && vars.PUBLISH_MAIN_ENABLED != 'true')
     runs-on: ubuntu-latest
     permissions: {}
     steps:
       - env:
           VERSION: ${{ needs.build.outputs.version }}
+          SWITCH: ${{ needs.build.outputs.channel == 'stable' && 'PUBLISH_MAIN_ENABLED' || 'PUBLISH_DEV_ENABLED' }}
         run: |
-          echo "::notice title=PyPI publish skipped::Built ${VERSION} but did not publish. Add the PyPI trusted publisher (repository ligaxai/ligaxai-python, workflow release.yml, environment pypi-dev and pypi), then set the repository variable PYPI_PUBLISH_ENABLED=true."
+          echo "::notice title=PyPI publish skipped::Built ${VERSION} but did not publish: repository variable ${SWITCH} is not 'true'."

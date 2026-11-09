@@ -8,6 +8,13 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- **Breaking: no built-in base URL.** `DEFAULT_BASE_URL` is removed. The API root comes from
+  `base_url=` or `LIGAX_BASE_URL` for every environment, production included; without one the
+  constructor raises the new `MissingBaseURLError` (`APIError` + `ValueError`) before any
+  request. The vendored spec's `servers` entry is the relative `/api/public/v1`, and
+  `scripts/sync_spec.py` rewrites it that way on each sync, so no deployment host ships in
+  the package or its docs.
+
 - CI runs on pushes to `main` and `dev` and ends in one `ci-gate` job for branch protection.
   Pull requests from logins outside `.github/CONTRIBUTORS` are closed; issues stay open.
 - Spec pinned to `public-api-spec-v0.7.0`: a profile reports `tool_access` (`read_only`,

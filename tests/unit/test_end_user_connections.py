@@ -44,7 +44,7 @@ def session_body(**overrides: Any) -> dict[str, Any]:
         "object": "connect_session",
         "id": SESSION_ID,
         "status": "pending",
-        "connect_url": "https://enterprise.ligax.ai/connect/flow_123",
+        "connect_url": "https://api.test.invalid/connect/flow_123",
         "expires_at": "2026-10-22T08:10:00.000Z",
         "connector_key": "gmail",
         "end_user_id": "user-42",

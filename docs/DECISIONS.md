@@ -144,3 +144,26 @@ The spec's `/mcp/{profile_id}` and `/a2a/{profile_id}` endpoints are generated (
 stays whole) but not mounted on a client: MCP and A2A client libraries speak those
 protocols, and a JSON-RPC passthrough here would duplicate them badly. The README points
 to them instead.
+
+## 2026-11-09 — No built-in base URL; the caller always names the platform
+
+**Context.** The client fell back to a hard-coded production API root when neither
+`base_url=` nor `LIGAX_BASE_URL` was set, and the README, examples and vendored spec named
+it. The package is about to be published to PyPI, where every installed copy would carry
+the host. The company asked that no deployment URL — production or development — ship in
+the library until the platform has a secured, public way to advertise one.
+
+**Options.** (a) keep the default; (b) keep a default but read it from a build-time value;
+(c) no default: `base_url=` or `LIGAX_BASE_URL` is required, the same way dev already worked.
+
+**Decision.** (c). `_resolve_base_url` raises `MissingBaseURLError(APIError, ValueError)`,
+shaped like `MissingAPIKeyError`, when neither is set (blank counts as unset). The vendored
+spec's `servers` is the relative `/api/public/v1`, and `sync_spec.py` rewrites it on every
+sync so an upstream host cannot return. Docs use the placeholder `https://<your-ligax-host>`.
+A regression test fails if a LigaX deployment host appears in the package, spec, examples
+or docs.
+
+**Consequences.** Breaking for callers that relied on the default (none published yet).
+Silent misrouting of a key to an unintended host is no longer possible. Re-adding a default
+later is a deliberate, reviewed change to this decision.
+

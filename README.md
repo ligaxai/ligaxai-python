@@ -20,20 +20,24 @@ Requires Python 3.11 or newer.
 ## Quickstart
 
 Create an organisation API key in LigaX under **Settings → Developers**, publish an agent
-profile for it, and set the key once:
+profile for it, and set the key and your platform's API root once:
 
 ```bash
 export LIGAX_API_KEY="lgx_sk_..."
-# Optional — the development platform instead of production:
-export LIGAX_BASE_URL="https://<dev-host>/api/public/v1"
+# Required — the API root of your LigaX platform (your LigaX administrator has it):
+export LIGAX_BASE_URL="https://<your-ligax-host>/api/public/v1"
 ```
+
+The SDK has no built-in host: every environment, including production, is chosen by
+`base_url=` or `LIGAX_BASE_URL`. Without one the client raises `MissingBaseURLError` before
+sending anything.
 
 Run an agent and wait for the answer:
 
 ```python
 from ligaxai import LigaX
 
-client = LigaX()  # reads LIGAX_API_KEY (and LIGAX_BASE_URL)
+client = LigaX()  # reads LIGAX_API_KEY and LIGAX_BASE_URL
 run = client.runs.wait(profile_id="prf_...", input="Summarise yesterday's P1 incidents.")
 print(run.status, run.output.text)
 ```
@@ -179,7 +183,7 @@ tickets) and spends your credit. The rules that matter:
 | Setting     | Argument           | Environment variable | Default                                     |
 | ----------- | ------------------ | -------------------- | ------------------------------------------- |
 | API key     | `api_key=`         | `LIGAX_API_KEY`      | — (required)                                |
-| Base URL    | `base_url=`        | `LIGAX_BASE_URL`     | `https://enterprise.ligax.ai/api/public/v1` |
+| Base URL    | `base_url=`        | `LIGAX_BASE_URL`     | — (required, no built-in host)              |
 | Timeout     | `timeout=`         |                      | `Timeout(600, connect=5)`                   |
 | Retries     | `max_retries=`     |                      | `2`                                         |
 | Headers     | `default_headers=` |                      | `{}`                                        |
@@ -572,7 +576,7 @@ task-state mapping and the supported methods.
 
 ```bash
 claude mcp add --transport http ligax-support \
-  https://enterprise.ligax.ai/api/public/v1/mcp/prf_... \
+  https://<your-ligax-host>/api/public/v1/mcp/prf_... \
   --header "Authorization: Bearer $LIGAX_API_KEY"
 ```
 
@@ -583,13 +587,13 @@ import os
 from agents.mcp import MCPServerStreamableHttp
 
 ligax = MCPServerStreamableHttp(params={
-    "url": "https://enterprise.ligax.ai/api/public/v1/mcp/prf_...",
+    "url": "https://<your-ligax-host>/api/public/v1/mcp/prf_...",
     "headers": {"Authorization": f"Bearer {os.environ['LIGAX_API_KEY']}"},
 })
 ```
 
 **A2A:** the agent card is at
-`https://enterprise.ligax.ai/api/public/v1/a2a/prf_.../.well-known/agent-card.json` (it
+`https://<your-ligax-host>/api/public/v1/a2a/prf_.../.well-known/agent-card.json` (it
 needs the API key too); JSON-RPC calls go to `…/a2a/prf_...`, A2A 1.0 and 0.3.
 
 ## Runtime support
@@ -637,7 +641,6 @@ Apache-2.0 — see [LICENSE](LICENSE).
 | dev | every push to `dev` | `0.1.0.dev42` (PEP 440 pre-release) | `pip install "ligaxai==0.1.0.dev42"` or `pip install --pre ligaxai` |
 | stable | tag `vX.Y.Z` on `main` | `0.1.0` | `pip install ligaxai` |
 
-`pip install ligaxai` never selects a `.dev` build. Point a dev install at the development
-platform with `LIGAX_BASE_URL=https://<dev-host>/api/public/v1`;
-the built-in default is the production host. After a stable tag, bump
+`pip install ligaxai` never selects a `.dev` build. Both channels have no built-in host:
+point any install at its platform with `LIGAX_BASE_URL` (or `base_url=`). After a stable tag, bump
 `src/ligaxai/_version.py` on `dev` so the next dev build sorts above the release.

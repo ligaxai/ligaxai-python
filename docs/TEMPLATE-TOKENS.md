@@ -16,7 +16,7 @@ template into a real repo.
 | `BASE_PROJECT`         | derived          | UPPER_SNAKE of the class prefix                | `BASE_PROJECT_API_KEY`, `BASE_PROJECT_BASE_URL`, `BASE_PROJECT_LOG`              |
 | `__PROJECT_TITLE__`    | `"<Title>"`      | human-readable product name                    | README heading, `pyproject.toml` description, LICENSE copyright line             |
 | `__GITHUB_ORG__`       | `<github-org>`   | GitHub org or user                             | badge and repo URLs, release workflow comment, `scripts/sync_spec.py` default    |
-| `__DEFAULT_BASE_URL__` | `<base-url>`     | default API root, e.g. `https://api.x.com/v1`  | `_client.DEFAULT_BASE_URL`, README configuration table                           |
+| `__DEFAULT_BASE_URL__` | `<base-url>`     | default API root, e.g. `https://api.x.com/v1`  | `_client.DEFAULT_BASE_URL`, README configuration table (`ligaxai` removed its default: DECISIONS 2026-11-09) |
 
 The spec repo name is derived: `__GITHUB_ORG__/base-project-slug-spec-source` (override with
 `SPEC_REPO` or `SPEC_ASSET_BASE` when running `make sync-spec`).

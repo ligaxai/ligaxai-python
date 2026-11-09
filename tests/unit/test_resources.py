@@ -25,6 +25,7 @@ from tests.conftest import (
     PROFILE_ID,
     RUN_ID,
     TEST_API_KEY,
+    TEST_BASE_URL,
     Recorder,
     json_response,
     make_async_client,
@@ -439,8 +440,8 @@ def test_sync_and_async_surfaces_match() -> None:
     """Invariant 1: every public method exists on both clients with the same parameters."""
     import inspect
 
-    sync = LigaX(api_key="k")
-    asyn = AsyncLigaX(api_key="k")
+    sync = LigaX(api_key="k", base_url=TEST_BASE_URL)
+    asyn = AsyncLigaX(api_key="k", base_url=TEST_BASE_URL)
     for name in ("runs", "conversations", "profiles", "keys", "usage", "files", "webhooks"):
         s_res, a_res = getattr(sync, name), getattr(asyn, name)
         s_methods = {m for m in dir(s_res) if not m.startswith("_")}

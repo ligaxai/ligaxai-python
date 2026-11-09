@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-10-22
+Last updated: 2026-11-09
 
 ## Plans
 
@@ -14,9 +14,14 @@ Last updated: 2026-10-22
 | Browser access (client tokens) | implemented | branch `feat/browser-access` (local); spec re-pinned with `/client_tokens` |
 | End-user connections      | implemented | branch `feat/end-user-connections` (local); spec re-pinned `public-api-spec-v0.3.0` |
 | Files + protocols         | implemented | branch `feat/files-and-protocols` (local, unpushed); spec `public-api-spec-v0.7.0` |
-| First PyPI release        | planned     | needs pending trusted publisher + `pypi` environment on GitHub          |
+| No built-in base URL      | implemented | `base_url=` / `LIGAX_BASE_URL` required; `MissingBaseURLError`          |
+| First PyPI release        | planned     | GitHub environments exist; needs the PyPI trusted publisher + switch    |
 
 ## Team activity
+
+- 2026-11-09 — no deployment host in the package: `DEFAULT_BASE_URL` removed, the base URL is
+  required (`MissingBaseURLError`), the spec's `servers` is relative and `sync_spec.py` keeps
+  it so, docs use `https://<your-ligax-host>`, and a test guards against a host reappearing.
 
 - 2026-10-24 — CI gate (`ci-gate`) on `main` and `dev`, and an allow-list that closes
   pull requests from other logins. GitHub rulesets for `main`/`dev` are repository settings.
@@ -67,4 +72,3 @@ Last updated: 2026-10-22
   deferred until a real resource needs them).
 - `sync_spec.py` is untested by design (network); exercise it manually when the spec repo
   exists.
-- CI matrix has not run yet — no commits are pushed.

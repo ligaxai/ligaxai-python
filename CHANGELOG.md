@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Releases work like the TypeScript SDK's.** A merge to `main` with a new version in
+  `_version.py` publishes it to PyPI after approval in the `pypi` environment, then tags the commit
+  `vX.Y.Z`; pushing a tag by hand is no longer the trigger. A merge whose version is already on PyPI
+  publishes nothing.
+- Development dependencies updated, including virtualenv 21.14.13 (security fix).
+
 ## [0.1.0] — 2026-11-09
 
 First stable release.

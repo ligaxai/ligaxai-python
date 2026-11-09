@@ -557,7 +557,7 @@ If you are an AI assistant writing code with this package, follow these facts ex
 
 - **Python:** 3.11, 3.12, 3.13 and 3.14, on Linux, macOS and Windows.
 - **Release channels:** `pip install ligaxai` installs the latest stable release. Preview
-  builds from the `dev` branch are versioned like `0.1.0.dev14`; install one with
+  builds from the `dev` branch are versioned like `0.1.1.dev3`; install one with
   `pip install --pre ligaxai` or an exact pin. Every channel needs `LIGAX_BASE_URL`.
 - **Transport:** [`httpx2`](https://pypi.org/project/httpx2/). If your app imports plain
   `httpx` and you want one shared stack, call `httpx2.alias_httpx()` before any `httpx`

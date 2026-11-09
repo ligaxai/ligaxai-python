@@ -4,9 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — 0.1.0
+## [0.1.0] — 2026-11-09
+
+First stable release.
 
 ### Changed
+
+- **Docs: the README is rewritten as the user guide and PyPI page.** What you need and the
+  words it uses come first, then install, configure (both required variables), a complete
+  quickstart, common tasks, web apps, webhooks, reference tables and a section for AI coding
+  assistants. Every link is absolute (relative links break on PyPI), the CI badge points at
+  this repository, and contributor material moved to `CONTRIBUTING.md`.
+  `tests/unit/test_readme.py` checks that the examples parse and import only real names.
+  PyPI now lists Documentation and Issues links.
+- **Breaking: no built-in base URL.** `DEFAULT_BASE_URL` is removed. The API root comes from
+  `base_url=` or `LIGAX_BASE_URL` for every environment, production included; without one the
+  constructor raises the new `MissingBaseURLError` (`APIError` + `ValueError`) before any
+  request. The vendored spec's `servers` entry is the relative `/api/public/v1`, and
+  `scripts/sync_spec.py` rewrites it that way on each sync, so no deployment host ships in
+  the package or its docs.
 
 - CI runs on pushes to `main` and `dev` and ends in one `ci-gate` job for branch protection.
   Pull requests from logins outside `.github/CONTRIBUTORS` are closed; issues stay open.

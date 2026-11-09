@@ -11,10 +11,10 @@ from . import types
 from ._client import (
     API_KEY_ENV_VAR,
     BASE_URL_ENV_VAR,
-    DEFAULT_BASE_URL,
     AsyncLigaX,
     LigaX,
     MissingAPIKeyError,
+    MissingBaseURLError,
 )
 from ._exceptions import (
     APIConnectionError,
@@ -50,7 +50,6 @@ from ._version import __version__
 __all__ = [
     "API_KEY_ENV_VAR",
     "BASE_URL_ENV_VAR",
-    "DEFAULT_BASE_URL",
     "NOT_GIVEN",
     "APIConnectionError",
     "APIError",
@@ -69,6 +68,7 @@ __all__ = [
     "InternalServerError",
     "LigaX",
     "MissingAPIKeyError",
+    "MissingBaseURLError",
     "NotFoundError",
     "NotGiven",
     "PaymentRequiredError",

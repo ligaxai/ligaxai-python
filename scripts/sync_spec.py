@@ -5,6 +5,10 @@ The spec repo publishes each version as a GitHub release with two assets:
 fetches both into ``openapi/`` and ``conformance/``. Tests never call it — fixtures are
 committed, so CI is hermetic.
 
+The spec's ``servers`` entry is rewritten to the relative ``/api/public/v1`` on the way in.
+This SDK ships no deployment host (the caller sets ``base_url=`` or ``LIGAX_BASE_URL``), so
+a host named by the upstream spec must not reappear in the vendored copy on the next sync.
+
 Environment overrides (all optional):
     SPEC_VERSION       release tag, default: contents of the SPEC_VERSION file
     SPEC_REPO          "<org>/<repo>", default ligaxai/ligaxai-spec-source
@@ -15,6 +19,7 @@ Environment overrides (all optional):
 from __future__ import annotations
 
 import io
+import json
 import os
 import sys
 import tarfile
@@ -24,6 +29,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPO = "ligaxai/ligaxai-spec-source"
 ASSETS = ("openapi.json", "conformance.tar.gz")
+RELATIVE_SERVER = "/api/public/v1"
+
+
+def strip_server_hosts(data: bytes) -> bytes:
+    """Return the spec with ``servers`` reduced to the relative API path (no host)."""
+    spec = json.loads(data)
+    spec["servers"] = [{"url": RELATIVE_SERVER}]
+    return (json.dumps(spec, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
 
 
 def spec_version() -> str:
@@ -85,7 +98,7 @@ def main() -> int:
         if name == "openapi.json":
             out = ROOT / "openapi" / name
             out.parent.mkdir(exist_ok=True)
-            out.write_bytes(data)
+            out.write_bytes(strip_server_hosts(data))
             print(f"sync_spec: wrote {out.relative_to(ROOT)} ({len(data)} bytes)")
         else:
             n = safe_extract(data, ROOT / "conformance")

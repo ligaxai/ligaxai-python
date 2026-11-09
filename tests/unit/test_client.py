@@ -4,11 +4,11 @@ import httpx2
 import pytest
 
 from ligaxai import (
-    DEFAULT_BASE_URL,
     APIError,
     AsyncLigaX,
     LigaX,
     MissingAPIKeyError,
+    MissingBaseURLError,
     RequestOptions,
     __version__,
 )
@@ -33,7 +33,7 @@ def test_api_key_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_explicit_api_key_beats_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LIGAX_API_KEY", "env-key")
-    with LigaX(api_key="arg-key") as client:
+    with LigaX(api_key="arg-key", base_url=TEST_BASE_URL) as client:
         assert client.api_key == "arg-key"
 
 
@@ -51,9 +51,41 @@ def test_empty_env_key_is_treated_as_missing(monkeypatch: pytest.MonkeyPatch) ->
         AsyncLigaX()
 
 
-def test_default_base_url_and_defaults() -> None:
-    with LigaX(api_key="k") as client:
-        assert str(client.base_url) == DEFAULT_BASE_URL + "/"
+def test_no_built_in_base_url() -> None:
+    import ligaxai
+    import ligaxai._client as client_module
+
+    # No host ships inside the package: the caller always names the platform.
+    assert not hasattr(ligaxai, "DEFAULT_BASE_URL")
+    assert not hasattr(client_module, "DEFAULT_BASE_URL")
+
+
+@pytest.mark.parametrize("cls", [LigaX, AsyncLigaX])
+def test_missing_base_url_raises_value_error(cls: type[LigaX] | type[AsyncLigaX]) -> None:
+    with pytest.raises(MissingBaseURLError) as exc_info:
+        cls(api_key="k")
+    assert isinstance(exc_info.value, ValueError)
+    assert isinstance(exc_info.value, APIError)
+    assert "LIGAX_BASE_URL" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("value", ["", "   "])
+def test_blank_env_base_url_is_treated_as_missing(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("LIGAX_BASE_URL", value)
+    with pytest.raises(MissingBaseURLError):
+        LigaX(api_key="k")
+
+
+def test_explicit_base_url_beats_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LIGAX_BASE_URL", "https://env.test.invalid/v1")
+    with LigaX(api_key="k", base_url="https://arg.test.invalid/v1") as client:
+        assert str(client.base_url) == "https://arg.test.invalid/v1/"
+
+
+def test_defaults() -> None:
+    with LigaX(api_key="k", base_url=TEST_BASE_URL) as client:
         assert client.max_retries == 2
         assert isinstance(client.timeout, httpx2.Timeout)
         assert client.timeout.connect == 5.0
@@ -62,9 +94,9 @@ def test_default_base_url_and_defaults() -> None:
 
 def test_rejects_foreign_http_client() -> None:
     with pytest.raises(TypeError):
-        LigaX(api_key="k", http_client=object())  # type: ignore[arg-type]
+        LigaX(api_key="k", base_url=TEST_BASE_URL, http_client=object())  # type: ignore[arg-type]
     with pytest.raises(TypeError):
-        AsyncLigaX(api_key="k", http_client=object())  # type: ignore[arg-type]
+        AsyncLigaX(api_key="k", base_url=TEST_BASE_URL, http_client=object())  # type: ignore[arg-type]
 
 
 def test_headers_sent(recorder: Recorder) -> None:

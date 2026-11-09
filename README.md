@@ -1,53 +1,115 @@
-# LigaX AI Python SDK
+# LigaX Python SDK
 
-[![CI](https://github.com/ligaxai/ligaxai/actions/workflows/ci.yml/badge.svg)](https://github.com/ligaxai/ligaxai/actions/workflows/ci.yml)
+[![CI](https://github.com/ligaxai/ligaxai-python/actions/workflows/ci.yml/badge.svg)](https://github.com/ligaxai/ligaxai-python/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/ligaxai.svg)](https://pypi.org/project/ligaxai/)
 [![Python](https://img.shields.io/pypi/pyversions/ligaxai.svg)](https://pypi.org/project/ligaxai/)
 
-The official Python client for the **LigaX Agent API**: run the agents you configure in
-LigaX from your own software. Sync and async clients with the same surface, typed
-responses, automatic retries with idempotency keys, and streaming that is safe to resume.
+Run the AI agents you build in LigaX from your own Python code.
+
+`ligaxai` is the official Python client for the LigaX Agent API. It has a sync client
+(`LigaX`) and an async client (`AsyncLigaX`) with the same methods, typed results, safe
+automatic retries, and streaming that can resume after a dropped connection.
+
+**Contents:**
+[What you need](https://github.com/ligaxai/ligaxai-python#what-you-need) ·
+[Install](https://github.com/ligaxai/ligaxai-python#install) ·
+[Configure](https://github.com/ligaxai/ligaxai-python#configure) ·
+[Quickstart](https://github.com/ligaxai/ligaxai-python#quickstart) ·
+[Common tasks](https://github.com/ligaxai/ligaxai-python#common-tasks) ·
+[Web apps](https://github.com/ligaxai/ligaxai-python#web-apps) ·
+[Webhooks](https://github.com/ligaxai/ligaxai-python#webhooks) ·
+[Configuration reference](https://github.com/ligaxai/ligaxai-python#configuration-reference) ·
+[Errors](https://github.com/ligaxai/ligaxai-python#errors) ·
+[Retries and timeouts](https://github.com/ligaxai/ligaxai-python#retries-and-timeouts) ·
+[Security](https://github.com/ligaxai/ligaxai-python#security) ·
+[API reference](https://github.com/ligaxai/ligaxai-python#api-reference) ·
+[For AI coding assistants](https://github.com/ligaxai/ligaxai-python#for-ai-coding-assistants)
+
+## What you need
+
+Get these four things from your LigaX workspace before you write any code:
+
+| You need | Looks like | Where to get it |
+| --- | --- | --- |
+| **API base URL** | `https://<your-ligax-host>/api/public/v1` | Your LigaX administrator. It is the address of *your* LigaX platform. |
+| **Secret API key** | `lgx_sk_…` | LigaX → **Settings → Developers → API keys**. Keep it on your server. |
+| **Agent profile ID** | `prf_…` | LigaX → **Settings → Developers**. A profile is a published agent your key may run. |
+| **Python** | 3.11 or newer | |
+
+Words used on this page:
+
+- **Agent profile** (`prf_…`): an agent you built in LigaX and published for API use.
+- **Run**: one request to an agent. You send `input` text and get back `output.text`.
+- **Conversation** (`conv_…`): a thread of runs. Pass its id to continue where you left off.
+- **End user**: a person in *your* app that a run acts for, named by your own user id.
+- **Approval**: a run can stop with status `requires_action` to ask before it acts. You
+  approve or reject it.
 
 ## Install
 
 ```bash
-pip install ligaxai            # or: uv add ligaxai
-pip install "ligaxai[fastapi]" # adds the FastAPI helpers
+pip install ligaxai
 ```
 
-Requires Python 3.11 or newer.
+Add the FastAPI helpers with `pip install "ligaxai[fastapi]"`. With uv: `uv add ligaxai`.
+
+## Configure
+
+Set two environment variables. Both are required.
+
+| Variable | Required | Value |
+| --- | --- | --- |
+| `LIGAX_BASE_URL` | yes | Your platform's API root, for example `https://<your-ligax-host>/api/public/v1` |
+| `LIGAX_API_KEY` | yes | Your secret API key, `lgx_sk_…` |
+
+```bash
+export LIGAX_BASE_URL="https://<your-ligax-host>/api/public/v1"
+export LIGAX_API_KEY="lgx_sk_..."
+```
+
+`<your-ligax-host>` is a placeholder: replace it with your platform's host. The SDK has **no
+built-in address**, for any environment. If the base URL is missing, creating the client
+raises `MissingBaseURLError`. If the key is missing, it raises `MissingAPIKeyError`. Both
+happen before any network call.
+
+You can also pass both values in code: `LigaX(base_url="...", api_key="...")`. An argument
+wins over the environment variable.
 
 ## Quickstart
 
-Create an organisation API key in LigaX under **Settings → Developers**, publish an agent
-profile for it, and set the key and your platform's API root once:
-
-```bash
-export LIGAX_API_KEY="lgx_sk_..."
-# Required — the API root of your LigaX platform (your LigaX administrator has it):
-export LIGAX_BASE_URL="https://<your-ligax-host>/api/public/v1"
-```
-
-The SDK has no built-in host: every environment, including production, is chosen by
-`base_url=` or `LIGAX_BASE_URL`. Without one the client raises `MissingBaseURLError` before
-sending anything.
-
-Run an agent and wait for the answer:
+Save this as `hello.py` and run `python hello.py`:
 
 ```python
 from ligaxai import LigaX
 
-client = LigaX()  # reads LIGAX_API_KEY and LIGAX_BASE_URL
-run = client.runs.wait(profile_id="prf_...", input="Summarise yesterday's P1 incidents.")
-print(run.status, run.output.text)
+client = LigaX()  # reads LIGAX_BASE_URL and LIGAX_API_KEY
+
+run = client.runs.wait(
+    profile_id="prf_...",  # your agent profile ID
+    input="Summarise yesterday's P1 incidents.",
+)
+
+if run.status == "completed":
+    print(run.output.text)
+else:
+    print("Run ended with status:", run.status, run.error)
 ```
 
-`client.profiles.list()` shows the profiles your key may run, and `client.keys.self()`
-shows the key's scopes and remaining spend — a good first call to prove the key works.
+It prints the agent's answer. `runs.wait` sends the request and waits until the run
+finishes or needs your approval.
 
-### Streaming
+To check your setup first, call `client.keys.self()`. It returns your key's name, scopes
+and spend limit. `client.profiles.list()` returns the profiles your key may run.
+
+## Common tasks
+
+### Stream the answer as it is written
 
 ```python
+from ligaxai import LigaX
+
+client = LigaX()
+
 with client.runs.stream(profile_id="prf_...", input="Draft a reply to ticket 4411.") as stream:
     for text in stream.text_stream():
         print(text, end="", flush=True)
@@ -56,21 +118,25 @@ print()
 print(stream.status, stream.run_id, stream.conversation_id)
 ```
 
-`stream.text_stream()` yields only newly arrived answer text. Iterate the stream itself
-for every frame as a `RunEvent(type, seq, payload, run_id)` — tool calls, sources,
-artifacts, `run.end` — and call `stream.final_text()` for the whole answer.
+`text_stream()` yields only the new text each time. To see every event (tool calls,
+sources, artifacts), iterate `stream` itself: each item is a `RunEvent` with `type`, `seq`,
+`payload` and `run_id`. `stream.final_text()` returns the whole answer.
 
-If the connection drops, resume from the last frame you saw:
+If the connection drops, resume from the last event you received. Nothing is repeated:
 
 ```python
 resumed = client.runs.follow_events(stream.run_id, after=stream.last_seq)
 ```
 
-### Async
+### Use async
+
+`AsyncLigaX` has the same methods. Await them, and use `async with` for streams:
 
 ```python
 import asyncio
+
 from ligaxai import AsyncLigaX
+
 
 async def main() -> None:
     async with AsyncLigaX() as client:
@@ -81,357 +147,130 @@ async def main() -> None:
             async for text in stream.text_stream():
                 print(text, end="", flush=True)
 
+
 asyncio.run(main())
 ```
 
-### Conversations, end users and approvals
+### Continue a conversation
+
+Every run belongs to a conversation. Pass `conversation_id` to continue it:
 
 ```python
-first = client.runs.wait(profile_id="prf_...", input="Open a ticket for the VPN outage",
-                         end_user="user-42")
-if first.status == "requires_action":           # the agent is asking before it acts
-    action = first.required_action
-    print(action.prompt)
-    client.runs.resolve_interrupt(first.id, action.interrupt_id, decision="approve")
-
-follow_up = client.runs.wait(profile_id="prf_...", input="Make it P2",
-                             conversation_id=first.conversation_id, end_user="user-42")
-```
-
-## The surface
-
-Every method exists on `LigaX` and `AsyncLigaX` with the same name and parameters (on the
-async client, `await` it; `runs.stream` / `runs.follow_events` can also be used with
-`async with`).
-
-| Call | Endpoint | Returns |
-| --- | --- | --- |
-| `runs.create(profile_id=, input=, conversation_id=, end_user=, model=, mode="wait"\|"async", metadata=, attachments=, idempotency_key=)` | `POST /runs` | `Run` |
-| `runs.wait(...)` — `create` then poll `get` until terminal or `requires_action` | `POST /runs`, `GET /runs/{id}` | `Run` |
-| `runs.stream(...)` | `POST /runs` (`mode: "stream"`) | `RunStream` |
-| `runs.get(run_id)` | `GET /runs/{id}` | `Run` |
-| `runs.events(run_id, after=0)` | `GET /runs/{id}/events` | `RunEventList` |
-| `runs.follow_events(run_id, after=0)` | `GET /runs/{id}/events?stream=true` | `RunStream` |
-| `runs.cancel(run_id)` | `POST /runs/{id}/cancel` | `Run` |
-| `runs.resolve_interrupt(run_id, interrupt_id, decision="approve"\|"reject"\|"answer", payload=)` | `POST /runs/{id}/interrupts/{iid}` | `Run` |
-| `conversations.get(conversation_id, end_user_id=None)` | `GET /conversations/{id}` | `Conversation` |
-| `profiles.list()` / `profiles.get(profile_id)` | `GET /profiles[/{id}]` | `ProfileList` / `Profile` |
-| `keys.self()` | `GET /keys/self` | `ApiKey` |
-| `usage.get(start=, end=, group_by=)` | `GET /usage` | `UsageReport` |
-| `files.create(file=, end_user_id=None)` | `POST /files` (multipart) | `FileObject` |
-| `files.get(file_id)` / `files.delete(file_id)` | `GET` / `DELETE /files/{id}` | `FileObject` / `FileDeleted` |
-| `webhooks.create(url=, event_types=, description=, profile_ids=, idempotency_key=)` | `POST /webhooks` | `WebhookEndpointWithSecret` |
-| `webhooks.list()` / `webhooks.get(webhook_id)` | `GET /webhooks[/{id}]` | `WebhookEndpointList` / `WebhookEndpoint` |
-| `webhooks.update(webhook_id, url=, description=, event_types=, profile_ids=, status=)` | `PATCH /webhooks/{id}` | `WebhookEndpoint` |
-| `webhooks.delete(webhook_id)` | `DELETE /webhooks/{id}` | `WebhookEndpointDeleted` |
-| `webhooks.test(webhook_id)` | `POST /webhooks/{id}/test` | `WebhookDelivery` |
-| `client_tokens.create(profile_id=, end_user=, conversation_id=, expires_in=)` | `POST /client_tokens` | `ClientToken` |
-| `connect_sessions.create(connector_key=, profile_id=, end_user=)` | `POST /connect_sessions` | `ConnectSession` |
-| `connect_sessions.get(session_id, end_user_id=None)` | `GET /connect_sessions/{id}` | `ConnectSession` |
-| `connect_sessions.wait(session_id, end_user_id=None, poll_interval=2, timeout=600)` — poll `get` until the session leaves `pending` | `GET /connect_sessions/{id}` | `ConnectSession` |
-| `end_users.connections.list(end_user_id)` | `GET /end_users/{id}/connections` | `EndUserConnectionList` |
-| `end_users.connections.delete(end_user_id, connection_id)` | `DELETE /end_users/{id}/connections/{cid}` | `EndUserConnectionDeleted` |
-
-Types live in `ligaxai.types`. Fields are snake_case, exactly as on the wire. Every model
-keeps fields the server adds later (`model.model_extra`) and carries `.request_id`.
-
-### How streamed text is assembled
-
-Answer text arrives as `text.delta` frames that say *write this text at this offset of
-this part*, with offsets in UTF-16 code units. Delivery is at-least-once, so a resumed
-stream can repeat frames. `TextAssembler` (used by every `RunStream`) writes each delta at
-its position — a repeated frame changes nothing — and only ever reports new text. You can
-use it directly over recorded events:
-
-```python
-from ligaxai import TextAssembler
-
-assembler = TextAssembler()
-for event in client.runs.events(run_id).data:
-    assembler.apply(event)
-print(assembler.answer())
-```
-
-`reasoning.*` frames and frame types this version does not know are ignored, never errors.
-
-## Before you integrate: security
-
-An agent you run through this SDK acts with your workspace's connected accounts (mail, files,
-tickets) and spends your credit. The rules that matter:
-
-- **Secret keys (`lgx_sk_…`) stay on your server.** Never in a browser, mobile app, repository or
-  log; the SDK and the API both refuse one in a browser. A secret key can act as **any** of your end
-  users, so restrict it to the profiles it needs and only the scopes it uses, and give it a spend
-  limit.
-- **Website keys (`lgx_pk_…`) are public.** Anyone can copy one from your page. Visitors on a website
-  key can only chat (no account connections, uploads or approvals); give the key a small spend limit
-  and attach it only to profiles anyone may use.
-- **Say who the user is from your own session.** The server helpers require it (or an explicit
-  anonymous opt-in) and answer 401 otherwise. Never take the end user from the request body or a
-  header the browser sets.
-- **Anything the agent reads can try to instruct it** — emails, documents, web pages, tool results.
-  Keep approvals on for sending, writing and deleting, and answer them from your server or a
-  signed-in user, never automatically.
-- **Treat the agent's answer as untrusted input** to your app: never `eval` it or put it into HTML
-  unescaped; don't auto-load links or images it writes.
-- **Verify every webhook** with the SDK's verifier, deduplicate on `webhook-id`, and answer fast.
-- **Pin versions** and commit your lockfile. Releases carry provenance: `npm audit signatures`
-  (npm) or the PyPI attestation. Report vulnerabilities to security@ligaments.ai.
-
-## Configuration
-
-| Setting     | Argument           | Environment variable | Default                                     |
-| ----------- | ------------------ | -------------------- | ------------------------------------------- |
-| API key     | `api_key=`         | `LIGAX_API_KEY`      | — (required)                                |
-| Base URL    | `base_url=`        | `LIGAX_BASE_URL`     | — (required, no built-in host)              |
-| Timeout     | `timeout=`         |                      | `Timeout(600, connect=5)`                   |
-| Retries     | `max_retries=`     |                      | `2`                                         |
-| Headers     | `default_headers=` |                      | `{}`                                        |
-| Logging     |                    | `LIGAX_LOG`          | `off`                                       |
-| HTTP client | `http_client=`     |                      | an `httpx2.Client` of our own               |
-
-`client.with_options(max_retries=0, timeout=10)` returns a copy that shares the connection
-pool. Every method also takes `options=RequestOptions(headers=…, params=…, timeout=…,
-max_retries=…, idempotency_key=…)`.
-
-The default timeout leaves room for `runs.create(mode="wait")`, which the server holds for
-up to 240 s before answering `202` with the run so far; `runs.wait` then polls for you.
-
-## Retries and timeouts
-
-Failed requests are retried twice by default with exponential backoff (0.5 s → 8 s, 25 %
-jitter). Retried: connection errors, timeouts, 408, 409, 429 and every 5xx. **Never**
-retried: 402, 403 and 422, or anything once a stream has started. The server can override
-the decision with `x-should-retry: true|false` and steer the delay with `retry-after-ms` or
-`retry-after` (seconds or HTTP-date, honoured up to 120 s) — the API sends `Retry-After` on
-its 429 and 503 answers.
-
-Every POST carries an `Idempotency-Key` that is minted once per call and reused across
-retries, so a retried `runs.create` can never start a second run. Pass your own with
-`idempotency_key=` to make a retry safe across processes too; reusing one with a different
-request body raises `UnprocessableEntityError` (`code == "idempotency_key_reused"`).
-
-## Errors
-
-```python
-from ligaxai import APIConnectionError, APIStatusError, PaymentRequiredError, RateLimitError
-
-try:
-    client.runs.create(profile_id="prf_...", input="Hi")
-except PaymentRequiredError as e:   # the key or the organisation reached its spend limit
-    print(e.code, e.response.headers.get("x-limit-resets-at"))
-except RateLimitError as e:
-    print(e.status_code, e.code, e.request_id)
-except APIStatusError as e:         # any 4xx/5xx
-    print(e.status_code, e.code, e.param, e.message)
-except APIConnectionError:          # includes APITimeoutError
-    ...
-```
-
-| Status | Exception                  |
-| ------ | -------------------------- |
-| 400    | `BadRequestError`          |
-| 401    | `AuthenticationError`      |
-| 402    | `PaymentRequiredError`     |
-| 403    | `PermissionDeniedError`    |
-| 404    | `NotFoundError`            |
-| 409    | `ConflictError`            |
-| 422    | `UnprocessableEntityError` |
-| 429    | `RateLimitError`           |
-| ≥ 500  | `InternalServerError`      |
-
-`code`, `type`, `param` and `request_id` come from the JSON error envelope
-`{"error": {"type", "code", "message", "request_id", "param"}}`; `request_id` falls back
-to the `X-Request-Id` header. Successful responses expose it too: `run.request_id`. Quote
-it when contacting support.
-
-## Logging
-
-`LIGAX_LOG=debug|info|warn|error|off` configures the `ligaxai`
-logger. `Authorization` values are redacted before they reach any handler.
-
-## Files
-
-Upload a file, then attach its id to a run so the agent can read it (scope `files:write`):
-
-```python
-f = client.files.create(file="contract.pdf")      # a path, bytes, a file opened "rb",
-                                                  # or ("name.pdf", data, "application/pdf")
-run = client.runs.wait(profile_id="prf_...", input="Summarise the termination clause",
-                       attachments=[f.id])
-client.files.delete(f.id)                         # optional: files expire after 30 days
-```
-
-- **Limits:** up to 25 MB per file — a larger one raises `ValueError` before anything is
-  uploaded — and up to 10 attachments per run. `runs.stream` takes `attachments=` too.
-- **Types:** whether a type can be read depends on the profile's model; a model that can't
-  read it refuses the attachment.
-- **No download:** `files.get` returns metadata only (`filename`, `content_type`,
-  `size_bytes`, `expires_at`).
-- **Ownership:** a client token uploads for its own user, and only that user's runs can
-  attach the file. A secret key may pass `end_user_id=` to upload for one of your users.
-- The file is read into memory before sending, so a retried upload re-sends the same bytes.
-
-## Webhooks
-
-LigaX can `POST` an event to your server when a run finishes, fails, is canceled or waits
-on you, and when a key reaches its spend limit — instead of you polling `runs.get`.
-Managing endpoints needs a key with the `webhooks:manage` scope (or use Settings →
-Developers).
-
-### Create an endpoint and store the secret
-
-```python
-from ligaxai import LigaX
-
-client = LigaX()
-endpoint = client.webhooks.create(
-    url="https://example.com/hooks/ligax",
-    event_types=["run.completed", "run.failed", "run.requires_action"],
-    profile_ids=["prf_..."],          # optional: only these profiles' runs
+first = client.runs.wait(profile_id="prf_...", input="Open a ticket for the VPN outage")
+follow_up = client.runs.wait(
+    profile_id="prf_...",
+    input="Make it priority 2",
+    conversation_id=first.conversation_id,
 )
-save_secret(endpoint.id, endpoint.secret)   # whsec_… — returned once, never again
-client.webhooks.test(endpoint.id)           # sends a webhook.test event now
 ```
 
-`create` is idempotent: every call carries an `Idempotency-Key` (reused across the SDK's
-own retries), and a retry with the same key gets the endpoint — and secret — the first
-attempt created instead of a second endpoint. Pass `idempotency_key=` (for example your
-Zap's subscription id) to make that hold across processes too.
+### Act for one of your users
 
-Events: `run.completed`, `run.failed`, `run.canceled`, `run.requires_action`,
-`api_key.limit_reached`, `connection.created`, `connection.deleted` (plus `webhook.test`,
-sent only by `webhooks.test`).
-`webhooks.update(id, status="disabled")` pauses an endpoint; an endpoint that keeps failing
-for five days is disabled by the server (`disabled_reason == "failing"`) and re-enabled
-with `status="active"`. Store the secret like any credential — in your secret manager,
-not in code.
-
-### Verify and handle a delivery
-
-Deliveries follow [Standard Webhooks](https://www.standardwebhooks.com) (`webhook-id`,
-`webhook-timestamp`, `webhook-signature`). `webhooks.verify` checks the signature and the
-five-minute timestamp window, then returns a typed event:
+Pass `end_user` with your own user id. The run then uses that user's connected accounts
+and conversations, and only that user can continue them:
 
 ```python
-from ligaxai import WebhookVerificationError, webhooks
-from ligaxai.types import ApiKeyLimitWebhookEvent, RunWebhookEvent
-
-try:
-    event = webhooks.verify(raw_body, request_headers, secret=WEBHOOK_SECRET)
-except WebhookVerificationError:
-    return 400
-
-if isinstance(event, RunWebhookEvent) and event.type == "run.completed":
-    run = client.runs.get(event.data.id)    # payloads are thin: fetch the answer
-elif isinstance(event, ApiKeyLimitWebhookEvent):
-    alert(event.data.name, event.data.limit_usd)
+run = client.runs.wait(profile_id="prf_...", input="What is on my calendar?", end_user="user-42")
 ```
 
-The event types are `RunWebhookEvent` (`type` is one of the four `run.*` values; `data`
-carries `id`, `status`, `profile_id`, `conversation_id`, `end_user_id`, `metadata`, and
-`error_code` / `interrupt_id` / `interrupt_kind` when they apply),
-`ApiKeyLimitWebhookEvent`, `ConnectionCreatedWebhookEvent` (`data`: `id`, `end_user_id`,
-`status`), `ConnectionDeletedWebhookEvent` (`data`: `id`, `connector_key`, `end_user_id`),
-`WebhookTestEvent`, and `UnknownWebhookEvent` for a type added after your SDK version — answer 2xx and ignore it. `webhooks.verify_signature()` and
-`webhooks.parse_event()` are the two halves, if you want the body some other way.
+Take the user id from your own login session, never from the browser's request.
 
-In FastAPI, `webhook_dependency` reads the raw body for you and answers `400` on a bad
-signature:
+### Approve or reject an action
+
+An agent can stop and ask before it acts, for example before it sends an email. The run
+then has status `requires_action`:
 
 ```python
-from fastapi import BackgroundTasks, Depends, FastAPI, Header
-from ligaxai.fastapi import webhook_dependency
-from ligaxai.types import WebhookEvent
+run = client.runs.wait(profile_id="prf_...", input="Email the team about the outage")
 
-app = FastAPI()
-verified = webhook_dependency(lambda: settings.ligax_webhook_secret)
-
-@app.post("/hooks/ligax", status_code=204)
-async def ligax_hook(
-    background: BackgroundTasks,
-    event: WebhookEvent = Depends(verified),
-    webhook_id: str = Header(),
-) -> None:
-    background.add_task(handle, webhook_id, event)
+if run.status == "requires_action" and run.required_action:
+    print("The agent asks:", run.required_action.prompt)
+    run = client.runs.resolve_interrupt(
+        run.id, run.required_action.interrupt_id, decision="approve"  # or "reject"
+    )
 ```
 
-Rules that keep a receiver correct:
+### Send a file
 
-- **Verify the raw bytes.** Never verify `json.dumps(await request.json())` — any
-  re-serialisation changes what was signed.
-- **Answer 2xx fast.** The server waits 15 s; anything else (including a redirect) is a
-  failure and is retried for about 27 hours (5 s, 5 min, 30 min, 2 h, 5 h, 10 h, 10 h).
-  Queue the work and return.
-- **Dedupe on `webhook-id`.** Delivery is at-least-once; a retry carries the same id.
-  Record ids you have processed and skip repeats.
-- **Fetch, don't trust the payload for content.** `data` identifies the object and never
-  carries the answer; read it with `runs.get` using your key.
-- **Rotation.** During a secret rotation a delivery carries two signatures; `verify`
-  accepts either secret.
+Upload a file, then attach its id to a run. The key needs the `files:write` scope:
 
-### Zapier, Make and n8n
+```python
+f = client.files.create(file="contract.pdf")  # a path, bytes, or a file opened in "rb" mode
+run = client.runs.wait(
+    profile_id="prf_...",
+    input="Summarise the termination clause",
+    attachments=[f.id],
+)
+```
 
-`POST /webhooks` and `DELETE /webhooks/{id}` are the REST-Hooks subscribe / unsubscribe
-pair these tools expect. In a custom integration, the trigger's *subscribe* step calls
-`POST /webhooks` with the tool's catch URL and the events it wants, and keeps the returned
-`id`; *unsubscribe* calls `DELETE /webhooks/{id}` when the workflow is switched off. Use a
-key with only the `webhooks:manage` scope (plus `runs:read` if the workflow fetches the
-run). Payloads are thin by design, so a tool's task history holds ids and a status, never a
-transcript.
+- Up to 25 MB per file and 10 files per run. A larger file raises `ValueError` before upload.
+- Files are kept for 30 days. `client.files.delete(f.id)` removes one early.
+- `files.get(id)` returns metadata only. There is no download.
+- Whether a file type can be read depends on the agent's model.
 
-## FastAPI
+### Check a run later
 
-Keep the secret key on your server and let the browser stream through it:
+Start a run without waiting, then read it:
+
+```python
+run = client.runs.create(profile_id="prf_...", input="Prepare the weekly report", mode="async")
+run = client.runs.get(run.id)       # status: queued, running, completed, ...
+client.runs.cancel(run.id)          # stop it if you no longer need it
+```
+
+A run's `status` is one of `queued`, `running`, `requires_action`, `completed`, `failed`,
+`canceled` or `expired`.
+
+## Web apps
+
+### Stream to a browser with FastAPI
+
+Keep the secret key on your server. The browser talks to your route, and your route talks
+to LigaX:
 
 ```python
 from fastapi import FastAPI, Request
 from ligaxai.fastapi import client_dependency, run_stream_route
 
 app = FastAPI()
-get_client = client_dependency()  # one AsyncLigaX per process, from LIGAX_API_KEY
+get_client = client_dependency()  # one AsyncLigaX per process, from the environment
+
 
 def current_user(request: Request) -> str:
-    return request.state.user_id   # from YOUR auth — never from the request body
+    return request.state.user_id  # from YOUR login session
+
 
 app.post("/chat")(run_stream_route(get_client, "prf_...", current_user))
 ```
 
-The browser `POST`s `{"input": "…", "conversation_id": "conv_…"}` to `/chat` and reads
-`text/event-stream` frames shaped like `RunEvent` (`X-Run-Id` / `X-Conversation-Id` come
-back as headers). The profile and model are fixed on the server, and the end user comes
-from your session, so one person cannot continue another's conversation. A refusal (spend
-limit, rate limit, unknown profile) arrives as a plain HTTP error with the API's status.
+The browser sends `POST /chat` with `{"input": "…", "conversation_id": "conv_…"}` and reads
+a `text/event-stream`. The profile is fixed on the server and the user comes from your
+session, so one person cannot read or continue another's conversation. Without a signed-in
+user the route answers `401`. A complete app is in
+[examples/fastapi-app](https://github.com/ligaxai/ligaxai-python/tree/main/examples/fastapi-app).
 
-See [`examples/fastapi-app`](examples/fastapi-app) for a runnable app with a minimal page.
+### Let a browser call LigaX directly (client tokens)
 
-## Browser access: minting client tokens
-
-To let a page call the API **directly from the browser** (no proxy route per request), your
-server mints a short-lived **client token** for the signed-in user and hands it to the page.
-The browser never sees your secret key: a token (`lgx_ct_…`) runs only the one profile it
-names, only as that one end user, reads only that user's conversations, and cannot touch
-webhooks, usage or other profiles. It expires in minutes (60 to 3600 seconds, default 600)
-and stops at once if its parent key is disabled, revoked or rotated — have the page fetch a
-fresh one when it expires.
-
-Two settings must be in place:
-
-- the minting secret key needs the `client_tokens:write` scope;
-- the profile must list your website's origin (e.g. `https://app.example.com`) under
-  **allowed origins** in Settings → Developers, or the platform refuses the browser's calls.
+Your server can mint a short-lived **client token** (`lgx_ct_…`) for the signed-in user.
+The browser uses it instead of your secret key:
 
 ```python
 token = client.client_tokens.create(
     profile_id="prf_...",
-    end_user={"id": user.id, "name": user.name},  # or just user.id
-    expires_in=900,                                # optional; server default 600
+    end_user={"id": "user-42", "name": "Ada"},  # or just "user-42"
+    expires_in=900,  # seconds, 60 to 3600; default 600
 )
-token.token        # "lgx_ct_…" — send to that user's browser only; never log it
-token.expires_at
+# Send token.token and token.expires_at to that user's browser. Never log the token.
 ```
 
-With FastAPI, one line mounts an endpoint the page calls (with its session cookie):
+A client token runs one profile, as one end user, for a few minutes. It cannot manage
+keys, webhooks or usage. Two settings must be in place:
+
+- the secret key that mints it needs the `client_tokens:write` scope;
+- the profile must list your website's origin (for example `https://app.example.com`)
+  under **allowed origins** in Settings → Developers.
+
+With FastAPI, `client_token_route` is that endpoint:
 
 ```python
 from fastapi import FastAPI, Request
@@ -440,139 +279,120 @@ from ligaxai.fastapi import client_dependency, client_token_route
 app = FastAPI()
 get_client = client_dependency()
 
+
 def current_user(request: Request) -> tuple[str, str] | None:
-    user = request.state.user          # from YOUR auth — never from the request body
-    return (user.id, user.name) if user else None   # None → 401
+    user = request.state.user  # from YOUR login session
+    return (user.id, user.name) if user else None  # None answers 401
+
 
 app.post("/ligax/token")(client_token_route(get_client, "prf_...", current_user))
 ```
 
-It answers `{"token": "lgx_ct_…", "expires_at": "…"}` with `Cache-Control: no-store`; a
-refusal from the API (missing scope, unknown profile) keeps its status and error code.
+It answers `{"token": "lgx_ct_…", "expires_at": "…"}` with `Cache-Control: no-store`. In
+Django or Flask, write the same three steps in your own view: require a signed-in user,
+call `client.client_tokens.create(...)`, return `token` and `expires_at`.
 
-**Django, Flask or anything else:** the same three steps in a view of your own — require a
-signed-in user (401 otherwise), call `client_tokens.create(profile_id=..., end_user=...)`
-with the id from your session, and return only `token` and `expires_at` with
-`Cache-Control: no-store`. Prefer `POST` so the token is never cached or prefetched, and
-never take the profile or user id from the request.
+### Let your users connect their own accounts
 
-A client token also works as `api_key` — `LigaX(api_key="lgx_ct_…")` — for runs and
-conversations of its one profile and end user. That is meant for tests and tools that
-want to act as the browser; it expires in minutes and the client cannot refresh it.
-`POST /widget/sessions` (publishable keys) is for the browser widget only and has no
-method here.
+By default an agent uses the workspace's shared connections. If the profile allows it
+(*End users can connect their own accounts*, on the agent's **API & Integrations** tab),
+each of your users can connect their own Gmail, Outlook and so on. Runs with that
+`end_user` then use the user's own account.
 
-## End users' own accounts
-
-By default a profile's agent acts with the workspace's **shared** connections. With
-end-user connections switched on for the profile (*End users can connect their own
-accounts*, under the agent's API & Integrations), each of your users connects **their own**
-Gmail, Outlook, Dynamics and so on, and a run that names `end_user` acts with that user's
-account — falling back to the profile's shared one where they have none, if the profile
-allows it.
-
-Connecting is a popup the user completes in their browser. Your server starts a **connect
-session** for the signed-in user (key scope `connections:write`) and returns its
-`connect_url`; the page opens it in a popup and polls until the session settles:
+Your server starts a **connect session** (scope `connections:write`) and gives the
+browser its `connect_url`:
 
 ```python
-from fastapi import Depends, FastAPI, HTTPException, Request
-from ligaxai import APIStatusError, AsyncLigaX
-from ligaxai.fastapi import client_dependency
-
-app = FastAPI()
-get_client = client_dependency()  # a secret key with connections:write and connections:read
-
-
-def current_user_id(request: Request) -> str:
-    user = request.state.user          # from YOUR auth — never from the request body
-    if user is None:
-        raise HTTPException(401)
-    return user.id
-
-
-@app.post("/integrations/{connector_key}/connect")
-async def start_connect(
-    connector_key: str,
-    user_id: str = Depends(current_user_id),
-    client: AsyncLigaX = Depends(get_client),
-) -> dict[str, str | None]:
-    try:
-        session = await client.connect_sessions.create(
-            connector_key=connector_key,   # e.g. "gmail"; check it against your own list
-            profile_id="prf_...",
-            end_user=user_id,
-        )
-    except APIStatusError as exc:      # 409 end_user_connections_off, 422 connector_not_…
-        raise HTTPException(exc.status_code, exc.code) from exc
-    return {"id": session.id, "connect_url": session.connect_url}
-
-
-@app.get("/integrations/sessions/{session_id}")
-async def connect_status(
-    session_id: str,
-    user_id: str = Depends(current_user_id),
-    client: AsyncLigaX = Depends(get_client),
-) -> dict[str, str | None]:
-    # end_user_id from the session, so one user cannot read another's connect session.
-    session = await client.connect_sessions.get(session_id, end_user_id=user_id)
-    return {"status": session.status, "failure_code": session.failure_code}
+session = client.connect_sessions.create(
+    connector_key="gmail",
+    profile_id="prf_...",
+    end_user="user-42",
+)
+# In the browser, open session.connect_url in a popup from a click handler.
 ```
 
-In the browser, open the popup **inside the click handler** (or browsers block it), then
-poll your status route every two seconds until `status` is no longer `pending`:
-
-```js
-const { id, connect_url } = await fetch(`/integrations/gmail/connect`, { method: 'POST' })
-  .then(r => r.json());
-window.open(connect_url, 'ligax-connect', 'width=520,height=720');
-let status = 'pending';
-while (status === 'pending') {
-  await new Promise(r => setTimeout(r, 2000));
-  ({ status } = await fetch(`/integrations/sessions/${id}`).then(r => r.json()));
-}
-// 'succeeded' — or 'denied', 'failed' (see failure_code), 'expired'
-```
-
-The popup shows the provider's own consent screen and closes itself when the user is done.
-LigaX never redirects back to an address taken from the request, so popup-and-poll is the
-way to learn the outcome; a `connection.created` webhook is also sent the first time a
-session is seen to succeed. A connector that needs typed credentials (an API key an admin
-must enter) answers `422 connector_not_connectable`.
-
-Server-side code can wait instead of polling by hand — `wait` returns the settled session
-(`denied`, `failed` and `expired` are outcomes, not exceptions) and raises `TimeoutError`
-if it is still pending after `timeout` seconds:
+Then wait until the user finishes. `denied`, `failed` and `expired` are results, not
+errors. `wait` raises `TimeoutError` if the session is still pending after `timeout`
+seconds:
 
 ```python
-session = client.connect_sessions.wait(session.id, end_user_id=user_id, timeout=300)
+session = client.connect_sessions.wait(session.id, end_user_id="user-42", timeout=300)
 if session.status == "succeeded":
-    print(session.connection_id)
+    print("Connected:", session.connection_id)
 ```
 
-List and disconnect a user's own accounts (never the workspace's shared ones):
+List or remove a user's own accounts (never the shared ones):
 
 ```python
-for conn in client.end_users.connections.list(user_id).data:
-    print(conn.id, conn.connector_key, conn.display_name, conn.status)
-client.end_users.connections.delete(user_id, conn.id)   # sends connection.deleted
+for conn in client.end_users.connections.list("user-42").data:
+    print(conn.id, conn.connector_key, conn.status)
+    client.end_users.connections.delete("user-42", conn.id)
 ```
 
-With a [client token](#browser-access-minting-client-tokens) the browser can call
-`POST /connect_sessions` and the list/delete endpoints itself, without `end_user` — the
-token already names its user and can reach only that user's accounts.
+## Webhooks
 
-## Use from MCP / A2A clients
+LigaX can call your server when something happens, so you don't have to poll. Managing
+endpoints needs the `webhooks:manage` scope.
 
-Every published agent profile is also an **MCP server** and an **A2A agent**, so Claude
-Code, Cursor, the OpenAI Agents SDK or another agent can call it directly — no SDK needed.
-They use the same API key, spend limits, webhooks and audit trail as `runs.create`. Send a
-secret key with *Start runs* and *Read runs* as `Authorization: Bearer …`, and add
-`X-LigaX-End-User: <your user id>` to act for one of your users. The platform's MCP and A2A
-guide (`docs/public-api/mcp-and-a2a.md`) has the tools (`ask`, `get_run`, `respond`), the
-task-state mapping and the supported methods.
+| Event | Sent when |
+| --- | --- |
+| `run.completed`, `run.failed`, `run.canceled` | a run ends |
+| `run.requires_action` | a run waits for your approval |
+| `api_key.limit_reached` | a key reaches its spend limit |
+| `connection.created`, `connection.deleted` | an end user connects or removes an account |
+| `webhook.test` | you call `webhooks.test` |
 
-**Claude Code:**
+**1. Create an endpoint and store its secret.** The secret (`whsec_…`) is returned only
+once:
+
+```python
+endpoint = client.webhooks.create(
+    url="https://example.com/hooks/ligax",
+    event_types=["run.completed", "run.failed", "run.requires_action"],
+    profile_ids=["prf_..."],  # optional: only these profiles' runs
+)
+print(endpoint.id, endpoint.secret)  # store the secret in your secret manager
+client.webhooks.test(endpoint.id)    # sends a webhook.test event now
+```
+
+**2. Verify every delivery** against the raw request body. `webhooks.verify` checks the
+signature and the timestamp, then returns a typed event:
+
+```python
+from ligaxai import WebhookVerificationError, webhooks
+from ligaxai.types import RunWebhookEvent
+
+
+def handle(raw_body: bytes, headers: dict[str, str], secret: str) -> int:
+    try:
+        event = webhooks.verify(raw_body, headers, secret=secret)
+    except WebhookVerificationError:
+        return 400
+    if isinstance(event, RunWebhookEvent) and event.type == "run.completed":
+        run = client.runs.get(event.data.id)  # the event holds ids, not the answer
+        print(run.output.text)
+    return 204
+```
+
+In FastAPI, `ligaxai.fastapi.webhook_dependency(get_secret)` does the reading and
+verifying for you and answers `400` on a bad signature.
+
+**3. Follow these rules:**
+
+- **Use the raw bytes.** Re-encoding parsed JSON changes what was signed.
+- **Answer 2xx within 15 seconds.** Do slow work in the background. Failed deliveries are
+  retried for about 27 hours; an endpoint that keeps failing is disabled.
+- **Skip duplicates.** A retry has the same `webhook-id` header. Remember the ids you handled.
+- **Fetch the content.** Events carry ids and a status only. Read the run with `runs.get`.
+
+Deliveries follow [Standard Webhooks](https://www.standardwebhooks.com). For Zapier, Make
+or n8n, map *subscribe* to `webhooks.create` and *unsubscribe* to `webhooks.delete`.
+
+## Use an agent from MCP or A2A clients
+
+Every published agent profile is also an MCP server and an A2A agent, so Claude Code,
+Cursor or another agent can call it without this SDK. Use a secret key with the **Start
+runs** and **Read runs** scopes:
 
 ```bash
 claude mcp add --transport http ligax-support \
@@ -580,67 +400,172 @@ claude mcp add --transport http ligax-support \
   --header "Authorization: Bearer $LIGAX_API_KEY"
 ```
 
-**OpenAI Agents SDK:**
+- MCP endpoint: `https://<your-ligax-host>/api/public/v1/mcp/prf_...` (tools `ask`,
+  `get_run`, `respond`).
+- A2A agent card: `https://<your-ligax-host>/api/public/v1/a2a/prf_.../.well-known/agent-card.json`
+  (A2A 1.0 and 0.3; send the same `Authorization` header).
+- Add the header `X-LigaX-End-User: <your user id>` to act for one of your users.
+
+## Configuration reference
+
+| Setting | Argument | Environment variable | Default |
+| --- | --- | --- | --- |
+| API base URL | `base_url=` | `LIGAX_BASE_URL` | none, **required** |
+| API key | `api_key=` | `LIGAX_API_KEY` | none, **required** |
+| Timeout | `timeout=` | | 600 s per request, 5 s to connect |
+| Retries | `max_retries=` | | `2` |
+| Extra headers | `default_headers=` | | none |
+| HTTP client | `http_client=` | | the SDK's own `httpx2.Client` |
+| Logging | | `LIGAX_LOG` | `off` |
+
+Change options for a few calls with `client.with_options(max_retries=0, timeout=10)`. It
+returns a copy that shares the connection pool. Any single call also accepts
+`options=RequestOptions(timeout=..., max_retries=..., headers=..., idempotency_key=...)`.
+
+`LIGAX_LOG` takes `debug`, `info`, `warn`, `error` or `off`. Logs never show your key.
+
+## Errors
+
+Every error the SDK raises is a subclass of `ligaxai.APIError`:
 
 ```python
-import os
-from agents.mcp import MCPServerStreamableHttp
+from ligaxai import APIConnectionError, APIStatusError, LigaX, PaymentRequiredError, RateLimitError
 
-ligax = MCPServerStreamableHttp(params={
-    "url": "https://<your-ligax-host>/api/public/v1/mcp/prf_...",
-    "headers": {"Authorization": f"Bearer {os.environ['LIGAX_API_KEY']}"},
-})
+client = LigaX()
+
+try:
+    client.runs.create(profile_id="prf_...", input="Hi")
+except PaymentRequiredError as e:  # the key or workspace reached its spend limit
+    print(e.code, e.response.headers.get("x-limit-resets-at"))
+except RateLimitError as e:  # still limited after the SDK's retries
+    print(e.status_code, e.request_id)
+except APIStatusError as e:  # any other 4xx or 5xx answer
+    print(e.status_code, e.code, e.message, e.request_id)
+except APIConnectionError:  # network problem or timeout (APITimeoutError)
+    raise
 ```
 
-**A2A:** the agent card is at
-`https://<your-ligax-host>/api/public/v1/a2a/prf_.../.well-known/agent-card.json` (it
-needs the API key too); JSON-RPC calls go to `…/a2a/prf_...`, A2A 1.0 and 0.3.
+| HTTP status | Exception |
+| --- | --- |
+| 400 | `BadRequestError` |
+| 401 | `AuthenticationError` |
+| 402 | `PaymentRequiredError` |
+| 403 | `PermissionDeniedError` |
+| 404 | `NotFoundError` |
+| 409 | `ConflictError` |
+| 422 | `UnprocessableEntityError` |
+| 429 | `RateLimitError` |
+| 500 and above | `InternalServerError` |
+| no response | `APIConnectionError`, `APITimeoutError` |
+| missing setup | `MissingBaseURLError`, `MissingAPIKeyError` (also `ValueError`) |
 
-## Runtime support
+Each status error has `status_code`, `code`, `message`, `param` and `request_id`. Every
+successful result has `request_id` too. Quote it when you contact support.
 
-| Python | Status                                            |
-| ------ | ------------------------------------------------- |
-| 3.14   | tested in CI                                      |
-| 3.13   | tested in CI                                      |
-| 3.12   | tested in CI                                      |
-| 3.11   | tested in CI — minimum                            |
-| ≤ 3.10 | not supported (3.10 reached end of life Oct 2026) |
+## Retries and timeouts
 
-Tested on Linux, macOS and Windows. Transport is [`httpx2`](https://pypi.org/project/httpx2/);
-if your app still imports plain `httpx` and you want one shared stack, call
-`httpx2.alias_httpx()` **before** any `httpx` import — this library never does that for you.
+- **Retried, 2 times by default:** connection errors, timeouts, and answers 408, 409, 429
+  and 5xx. The wait grows from 0.5 s to 8 s, and the SDK honours the server's `Retry-After`.
+- **Never retried:** 402, 403 and 422, and a stream that has already started.
+- **No duplicate runs:** every `POST` carries an `Idempotency-Key` that stays the same
+  across retries. Pass your own `idempotency_key=` to make a retry safe across processes.
+- **Timeout:** 600 seconds per request, so `runs.wait` has room. The server answers a long
+  run after up to 240 seconds, and `runs.wait` then keeps polling for you.
 
-## Development
+## Security
 
-```bash
-make setup        # uv sync + pre-commit
-make check        # ruff + mypy strict + pyright (+ verifytypes >= 95 %) + generated-model drift
-make test         # unit + conformance, HTTP always mocked
-make test-cov     # coverage gate (85 %)
-make build        # sdist + wheel
-make gen-types    # regenerate src/ligaxai/_generated/models.py from openapi/openapi.json
-```
+An agent run with your key acts with your workspace's connected accounts (mail, files,
+tickets) and spends your credit.
 
-The contract is pinned in `SPEC_VERSION` (`public-api-spec-v0.7.0`) and copied to
-`openapi/openapi.json` from the platform's `docs/public-api/spec/openapi.json`.
-`make check-types` fails if the generated models are stale against it.
+- **Keep secret keys (`lgx_sk_…`) on your server.** Never in a browser, a mobile app, a
+  repository or a log. Give each key only the profiles and scopes it needs, and a spend limit.
+- **Treat website keys (`lgx_pk_…`) as public.** Anyone can copy one from your page.
+  Visitors on a website key can only chat. Give it a small spend limit.
+- **Take the user's identity from your own session**, never from the request body or a
+  header the browser sets.
+- **Keep approvals on** for sending, writing and deleting. Anything the agent reads (an
+  email, a web page) can try to give it instructions.
+- **Treat the agent's answer as untrusted input.** Never `eval` it or insert it into HTML
+  unescaped.
+- **Verify every webhook** and skip duplicates.
+- **Pin the version** in your lockfile. Releases carry PyPI provenance attestations.
 
-Releases: bump `src/ligaxai/_version.py`, update `CHANGELOG.md`, tag `vX.Y.Z`.
-`release.yml` builds and publishes through PyPI trusted publishing. This repository was
-bootstrapped from an SDK template; its token list is kept in
-[`docs/TEMPLATE-TOKENS.md`](docs/TEMPLATE-TOKENS.md).
+Report a vulnerability to security@ligaments.ai (see
+[SECURITY.md](https://github.com/ligaxai/ligaxai-python/blob/main/SECURITY.md)).
+
+## API reference
+
+Every method exists on `LigaX` and `AsyncLigaX` with the same name and parameters.
+Results are typed models from `ligaxai.types`, with field names exactly as in the API
+(snake_case). Fields the server adds later are kept in `model.model_extra`.
+
+| Method | API call | Returns |
+| --- | --- | --- |
+| `runs.create(profile_id=, input=, conversation_id=, end_user=, model=, mode="wait"\|"async", metadata=, attachments=, idempotency_key=)` | `POST /runs` | `Run` |
+| `runs.wait(...)`: create, then poll until the run ends or needs approval | `POST /runs`, `GET /runs/{id}` | `Run` |
+| `runs.stream(...)` | `POST /runs` (streamed) | `RunStream` |
+| `runs.get(run_id)` | `GET /runs/{id}` | `Run` |
+| `runs.events(run_id, after=0)` | `GET /runs/{id}/events` | `RunEventList` |
+| `runs.follow_events(run_id, after=0)` | `GET /runs/{id}/events?stream=true` | `RunStream` |
+| `runs.cancel(run_id)` | `POST /runs/{id}/cancel` | `Run` |
+| `runs.resolve_interrupt(run_id, interrupt_id, decision="approve"\|"reject"\|"answer", payload=)` | `POST /runs/{id}/interrupts/{iid}` | `Run` |
+| `conversations.get(conversation_id, end_user_id=None)` | `GET /conversations/{id}` | `Conversation` |
+| `profiles.list()`, `profiles.get(profile_id)` | `GET /profiles[/{id}]` | `ProfileList`, `Profile` |
+| `keys.self()` | `GET /keys/self` | `ApiKey` |
+| `usage.get(start=, end=, group_by=)` | `GET /usage` | `UsageReport` |
+| `files.create(file=, end_user_id=None)` | `POST /files` | `FileObject` |
+| `files.get(file_id)`, `files.delete(file_id)` | `GET`, `DELETE /files/{id}` | `FileObject`, `FileDeleted` |
+| `webhooks.create(url=, event_types=, description=, profile_ids=, idempotency_key=)` | `POST /webhooks` | `WebhookEndpointWithSecret` |
+| `webhooks.list()`, `webhooks.get(webhook_id)` | `GET /webhooks[/{id}]` | `WebhookEndpointList`, `WebhookEndpoint` |
+| `webhooks.update(webhook_id, url=, description=, event_types=, profile_ids=, status=)` | `PATCH /webhooks/{id}` | `WebhookEndpoint` |
+| `webhooks.delete(webhook_id)` | `DELETE /webhooks/{id}` | `WebhookEndpointDeleted` |
+| `webhooks.test(webhook_id)` | `POST /webhooks/{id}/test` | `WebhookDelivery` |
+| `client_tokens.create(profile_id=, end_user=, conversation_id=, expires_in=)` | `POST /client_tokens` | `ClientToken` |
+| `connect_sessions.create(connector_key=, profile_id=, end_user=)` | `POST /connect_sessions` | `ConnectSession` |
+| `connect_sessions.get(session_id, end_user_id=None)` | `GET /connect_sessions/{id}` | `ConnectSession` |
+| `connect_sessions.wait(session_id, end_user_id=None, poll_interval=2, timeout=600)` | `GET /connect_sessions/{id}` | `ConnectSession` |
+| `end_users.connections.list(end_user_id)` | `GET /end_users/{id}/connections` | `EndUserConnectionList` |
+| `end_users.connections.delete(end_user_id, connection_id)` | `DELETE /end_users/{id}/connections/{cid}` | `EndUserConnectionDeleted` |
+
+Module-level helpers: `ligaxai.webhooks.verify` (with `verify_signature` and `parse_event`),
+`ligaxai.TextAssembler` (rebuilds answer text from recorded events), and
+`ligaxai.fastapi` (`client_dependency`, `run_stream_route`, `client_token_route`,
+`webhook_dependency`).
+
+## For AI coding assistants
+
+If you are an AI assistant writing code with this package, follow these facts exactly:
+
+1. Install `ligaxai`. Import from the top-level package: `from ligaxai import LigaX, AsyncLigaX`.
+2. There is **no default base URL**. The code must read `LIGAX_BASE_URL` from the
+   environment or pass `base_url=`. Never invent or hard-code a host. Without it the
+   client raises `MissingBaseURLError`.
+3. The key comes from `LIGAX_API_KEY` or `api_key=`. A secret key (`lgx_sk_…`) belongs in
+   server code only. For a browser, mint a client token with `client.client_tokens.create`.
+4. Create the client once and reuse it: `client = LigaX()`.
+5. The main call is `client.runs.wait(profile_id="prf_...", input="...")`. The answer is
+   `run.output.text` when `run.status == "completed"`. Handle `"requires_action"` with
+   `runs.resolve_interrupt`.
+6. Parameter and field names are snake_case, exactly as in the API (`profile_id`,
+   `conversation_id`, `end_user`). The async client has the same names; `await` each call.
+7. Catch `ligaxai.APIStatusError` (or a subclass from the table in
+   [Errors](https://github.com/ligaxai/ligaxai-python#errors)). Do not add your own retry
+   loop: the client already retries safely.
+8. Take `end_user` from the app's login session, never from user input.
+
+## Versions and support
+
+- **Python:** 3.11, 3.12, 3.13 and 3.14, on Linux, macOS and Windows.
+- **Release channels:** `pip install ligaxai` installs the latest stable release. Preview
+  builds from the `dev` branch are versioned like `0.1.0.dev14`; install one with
+  `pip install --pre ligaxai` or an exact pin. Every channel needs `LIGAX_BASE_URL`.
+- **Transport:** [`httpx2`](https://pypi.org/project/httpx2/). If your app imports plain
+  `httpx` and you want one shared stack, call `httpx2.alias_httpx()` before any `httpx`
+  import.
+- **Changes:** [CHANGELOG.md](https://github.com/ligaxai/ligaxai-python/blob/main/CHANGELOG.md).
+- **Bugs and questions:** [GitHub issues](https://github.com/ligaxai/ligaxai-python/issues).
+- **Contributing:** [CONTRIBUTING.md](https://github.com/ligaxai/ligaxai-python/blob/main/CONTRIBUTING.md).
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE).
-
-## Release channels
-
-| Channel | Source | Version shape | Install |
-| --- | --- | --- | --- |
-| dev | every push to `dev` | `0.1.0.dev42` (PEP 440 pre-release) | `pip install "ligaxai==0.1.0.dev42"` or `pip install --pre ligaxai` |
-| stable | tag `vX.Y.Z` on `main` | `0.1.0` | `pip install ligaxai` |
-
-`pip install ligaxai` never selects a `.dev` build. Both channels have no built-in host:
-point any install at its platform with `LIGAX_BASE_URL` (or `base_url=`). After a stable tag, bump
-`src/ligaxai/_version.py` on `dev` so the next dev build sorts above the release.
+Apache-2.0. See [LICENSE](https://github.com/ligaxai/ligaxai-python/blob/main/LICENSE).

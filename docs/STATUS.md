@@ -19,6 +19,11 @@ Last updated: 2026-11-09
 
 ## Team activity
 
+- 2026-11-09 — README rewritten as the user guide and PyPI page (researched against the
+  OpenAI, Anthropic, Stripe and Resend SDKs, Diátaxis and agent-readable docs guidance):
+  required configuration first, complete examples, an AI-assistant section, absolute links;
+  `CONTRIBUTING.md` holds the developer material; a README test guards the examples.
+
 - 2026-11-09 — no deployment host in the package: `DEFAULT_BASE_URL` removed, the base URL is
   required (`MissingBaseURLError`), the spec's `servers` is relative and `sync_spec.py` keeps
   it so, docs use `https://<your-ligax-host>`, and a test guards against a host reappearing.

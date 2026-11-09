@@ -43,13 +43,23 @@ Update `CHANGELOG.md` for every user-facing change, and the living docs in `docs
 | Channel | Source | Version shape | Install |
 | --- | --- | --- | --- |
 | dev | every push to `dev` | `0.1.0.dev42` (PEP 440 pre-release) | `pip install --pre ligaxai` or an exact pin |
-| stable | tag `vX.Y.Z` on `main` | `0.1.0` | `pip install ligaxai` |
+| stable | a merge to `main` with a new version | `0.1.0` | `pip install ligaxai` |
 
 `.github/workflows/release.yml` builds and publishes through PyPI trusted publishing; no
 token is stored anywhere. Two repository variables switch the channels:
-`PUBLISH_DEV_ENABLED` and `PUBLISH_MAIN_ENABLED` (exactly `true` to publish). For a stable
-release: bump `src/ligaxai/_version.py`, update `CHANGELOG.md`, merge to `main`, and tag
-`vX.Y.Z`. Then bump `_version.py` on `dev` so the next dev build sorts above the release.
+`PUBLISH_DEV_ENABLED` and `PUBLISH_MAIN_ENABLED` (exactly `true` to publish).
+
+A stable release works like the TypeScript SDK's:
+
+1. Open the `dev` → `main` release pull request. In it, bump `src/ligaxai/_version.py` and move
+   the `CHANGELOG.md` entries under the new version.
+2. Merge it with **Create a merge commit** (never squash).
+3. The Release workflow builds the version and waits in the `pypi` environment: open the run and
+   click **Review deployments → pypi → Approve and deploy**.
+4. It publishes to PyPI and tags the commit `vX.Y.Z`.
+
+A merge to `main` whose version is already on PyPI publishes nothing and ends with a notice. Dev
+builds after a release sort above it automatically (`scripts/dev_version.py`).
 
 ## Template
 

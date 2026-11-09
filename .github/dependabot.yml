@@ -1,16 +1,21 @@
 # Workflow actions are pinned to commit SHAs (a release job holds publish rights through OIDC, so a
 # moved tag must not change what runs). Dependabot proposes the SHA bumps, and dependency updates,
 # after a week's cool-down so a freshly hijacked release is likely caught before it reaches us.
+# Updates target `dev`, like every change: they reach `main` only through the dev → main
+# release, so the two branches never diverge (a squash-merged update on `main` did that once).
+# Dependabot reads this file from the default branch, so the setting applies once it is on `main`.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
   - package-ecosystem: uv
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
     cooldown:

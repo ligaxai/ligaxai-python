@@ -1,9 +1,9 @@
 """Public client classes: ``LigaX`` (sync) and ``AsyncLigaX``.
 
-Both resolve configuration the same way — explicit argument, then environment, then
-default — and mount the same resources, so a user can switch between them by changing one
-import. The sync and async classes are kept identical by construction: every resource
-exists in both flavours (see ``resources/_base.py``).
+Both resolve configuration the same way — explicit argument, then environment — and mount
+the same resources, so a user can switch between them by changing one import. The sync and
+async classes are kept identical by construction: every resource exists in both flavours
+(see ``resources/_base.py``).
 """
 
 from __future__ import annotations
@@ -33,14 +33,16 @@ if TYPE_CHECKING:
 __all__ = [
     "API_KEY_ENV_VAR",
     "BASE_URL_ENV_VAR",
-    "DEFAULT_BASE_URL",
     "AsyncLigaX",
     "LigaX",
 ]
 
 API_KEY_ENV_VAR = "LIGAX_API_KEY"
 BASE_URL_ENV_VAR = "LIGAX_BASE_URL"
-DEFAULT_BASE_URL = "https://enterprise.ligax.ai/api/public/v1"
+# There is deliberately no built-in base URL. The SDK ships to public registries, so a
+# hard-coded host would advertise a deployment in every installed copy, and a client that
+# silently falls back to one sends the key somewhere the caller never chose. The caller names
+# the platform (`base_url=` or LIGAX_BASE_URL), the same way for every environment.
 
 T = TypeVar("T")
 
@@ -58,6 +60,22 @@ class MissingAPIKeyError(APIError, ValueError):
             message
             or "No API key provided. Pass `api_key=` or set the "
             f"{API_KEY_ENV_VAR} environment variable."
+        )
+
+
+class MissingBaseURLError(APIError, ValueError):
+    """Raised at construction when no base URL could be found.
+
+    Same shape as ``MissingAPIKeyError``: a ``ValueError`` for plain misconfiguration
+    handlers and an ``APIError`` for the library-wide one. No request has been made.
+    """
+
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(
+            message
+            or "No base URL provided. Pass `base_url=` or set the "
+            f"{BASE_URL_ENV_VAR} environment variable to your LigaX API root "
+            "(it ends in /api/public/v1)."
         )
 
 
@@ -81,7 +99,10 @@ def _resolve_api_key(api_key: str | None) -> str:
 
 
 def _resolve_base_url(base_url: str | None) -> str:
-    return base_url or os.environ.get(BASE_URL_ENV_VAR) or DEFAULT_BASE_URL
+    url = (base_url or os.environ.get(BASE_URL_ENV_VAR) or "").strip()
+    if not url:
+        raise MissingBaseURLError()
+    return url
 
 
 class LigaX(SyncBaseClient):
@@ -93,7 +114,7 @@ class LigaX(SyncBaseClient):
             runs, conversations and connect sessions of its one profile and end user
             only — useful to act as the browser in a test or tool. It expires in minutes
             and cannot be refreshed by this client; mint a new one.
-        base_url: API root. Falls back to ``LIGAX_BASE_URL`` then the built-in default.
+        base_url: API root. Falls back to ``LIGAX_BASE_URL``; required, there is no default.
         timeout: ``httpx2.Timeout`` or seconds. Default ``Timeout(600, connect=5)``.
         max_retries: Attempts after the first. Default 2.
         default_headers: Sent on every request (after the SDK's own headers).

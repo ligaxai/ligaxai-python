@@ -8,7 +8,7 @@ cd examples/fastapi-app
 export LIGAX_API_KEY=lgx_sk_...   # never commit it; local env files are git-ignored
 export LIGAX_PROFILE_ID=prf_...   # a published profile this key may run
 # Optional — the development platform:
-export LIGAX_BASE_URL=https://<dev-host>/api/public/v1
+export LIGAX_BASE_URL=https://<your-ligax-host>/api/public/v1
 export LIGAX_DEMO_USER=me         # local try-out only: everyone is this one user
 uv run uvicorn main:app --reload
 ```

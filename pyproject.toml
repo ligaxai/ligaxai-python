@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ligaxai"
-description = "LigaX AI — official Python client library"
+description = "Official Python client for the LigaX Agent API: run your LigaX AI agents from Python."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dynamic = ["version"]
 authors = [{ name = "LigaX AI authors" }]
-keywords = ["LigaX AI", "api", "sdk", "client"]
+keywords = ["LigaX AI", "ligax", "ai agents", "agent api", "sdk", "client"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -39,7 +39,9 @@ fastapi = ["fastapi>=0.115,<1"]
 
 [project.urls]
 Homepage = "https://github.com/ligaxai/ligaxai-python"
+Documentation = "https://github.com/ligaxai/ligaxai-python#readme"
 Repository = "https://github.com/ligaxai/ligaxai-python"
+Issues = "https://github.com/ligaxai/ligaxai-python/issues"
 Changelog = "https://github.com/ligaxai/ligaxai-python/blob/main/CHANGELOG.md"
 Security = "https://github.com/ligaxai/ligaxai-python/blob/main/SECURITY.md"
 

@@ -26,6 +26,7 @@ from tests.conftest import (
     CONVERSATION_ID,
     PROFILE_ID,
     RUN_ID,
+    TEST_BASE_URL,
     Recorder,
     Status,
     frame,
@@ -376,7 +377,7 @@ async def test_client_token_route_forwards_refusals(recorder: Recorder) -> None:
 
 def test_run_stream_route_refuses_to_run_for_anyone() -> None:
     with pytest.raises(TypeError, match="resolve_end_user"):
-        run_stream_route(AsyncLigaX(api_key="lgx_sk_test"), PROFILE_ID)
+        run_stream_route(AsyncLigaX(api_key="lgx_sk_test", base_url=TEST_BASE_URL), PROFILE_ID)
 
 
 async def test_run_stream_route_needs_a_signed_in_user(recorder: Recorder) -> None:

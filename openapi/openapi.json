@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://enterprise.ligax.ai/api/public/v1"
+      "url": "/api/public/v1"
     }
   ],
   "security": [

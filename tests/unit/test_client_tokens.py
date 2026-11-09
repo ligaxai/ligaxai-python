@@ -15,6 +15,7 @@ from ligaxai.types import ClientToken
 from tests.conftest import (
     CONVERSATION_ID,
     PROFILE_ID,
+    TEST_BASE_URL,
     Recorder,
     error_body,
     json_response,
@@ -150,4 +151,5 @@ async def test_a_client_token_authenticates_a_run(
 
 def test_client_token_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LIGAX_API_KEY", TEST_CLIENT_TOKEN)
+    monkeypatch.setenv("LIGAX_BASE_URL", TEST_BASE_URL)
     assert LigaX().api_key == TEST_CLIENT_TOKEN

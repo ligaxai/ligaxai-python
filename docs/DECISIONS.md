@@ -167,3 +167,18 @@ or docs.
 Silent misrouting of a key to an unintended host is no longer possible. Re-adding a default
 later is a deliberate, reviewed change to this decision.
 
+## 2026-11-10 — Stable releases publish on merge to `main`, like the TypeScript SDK
+
+**Context.** A stable release needed a hand-pushed `vX.Y.Z` tag, while the TypeScript SDK
+publishes when the release pull request merges into `main`, behind an approval. The owner asked
+for one flow in both repositories.
+
+**Decision.** `release.yml` runs on pushes to `main` (the tag trigger is removed). The build reads
+`_version.py`; if PyPI already has that version, nothing is published and a notice says so.
+Otherwise the publish job waits in the `pypi` environment for approval, publishes, and a
+`tag-stable` job tags the commit `vX.Y.Z` with the workflow token. The version is bumped in the
+release pull request, which is where the TypeScript SDK runs `changeset version`.
+
+**Consequences.** The `pypi` environment's deployment rule must allow branch `main` instead of tags
+`v*`. The PyPI trusted publisher (environment `pypi`) is unchanged.
+

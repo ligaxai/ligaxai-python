@@ -1,12 +1,12 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'emscripten'",
-    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and sys_platform != 'emscripten'",
+    "python_full_version == '3.14.*' and sys_platform == 'emscripten'",
     "python_full_version == '3.14.*' and sys_platform != 'emscripten'",
+    "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform == 'emscripten'",
     "python_full_version < '3.14' and sys_platform != 'emscripten'",
     "python_full_version < '3.12' and sys_platform == 'emscripten'",
 ]
@@ -300,7 +300,7 @@ toml = [
 
 [[package]]
 name = "datamodel-code-generator"
-version = "0.88.0"
+version = "0.94.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "argcomplete" },
@@ -313,9 +313,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/91/f11d95a6ddcd88ed3cbf9cae8e2f73d20cc938e2e4ffa232109bcc2a7f7a/datamodel_code_generator-0.88.0.tar.gz", hash = "sha256:c44729fd1fa6fa011a916329bc4443fb4774b03f777a39846dd5fe5ac6a0bfd7", size = 8031362, upload-time = "2026-11-02T15:32:17.939Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/d3/e0e435f9a574ba581a66c824219b7722bf3120573e483a9fa40633f88f56/datamodel_code_generator-0.94.0.tar.gz", hash = "sha256:b06fcedc3957daff769bfeac80270c54b54505b17b1fa22315cbb32f3ec9cb33", size = 9680376, upload-time = "2026-11-12T01:00:27.026Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c9/8b/e12d95563a9f0f27b2af86110b6f6a5957972f93bb68b0716aaf6cd40674/datamodel_code_generator-0.88.0-py3-none-any.whl", hash = "sha256:7efca05a350bdee6759d2761d4fc8f9233781f99bb1bc8d7110f3e816bfafd2e", size = 2077797, upload-time = "2026-11-02T15:32:15.278Z" },
+    { url = "https://files.pythonhosted.org/packages/28/27/4be2fcb688336eaa6648ae03978314277287ebb4cc603501ba6fe1e9e78c/datamodel_code_generator-0.94.0-py3-none-any.whl", hash = "sha256:9060abb815af7e8cf792958824d0c6f6ef84b1aab83b2d7443c0541672361e96", size = 2448387, upload-time = "2026-11-12T01:00:24.561Z" },
 ]
 
 [[package]]
